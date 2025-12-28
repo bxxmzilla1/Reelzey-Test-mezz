@@ -192,9 +192,12 @@ const VideoCreator: React.FC<VideoCreatorProps> = ({ selectedHistoryVideoUrl, cl
                                         </div>
                                     </div>
                                 </section>
-                                <section className="flex flex-col items-center">
+                                <section className="flex flex-col md:flex-row items-center justify-center gap-4">
                                     <button onClick={handleGenerateVideo} disabled={isGenerateDisabled} className="w-full md:w-1/2 lg:w-1/3 py-4 rounded-2xl font-semibold text-lg transition-all flex items-center justify-center gap-3 bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/40 neon-glow neon-glow-hover active:scale-[0.98] disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed disabled:neon-glow-0">
                                         <i className="fas fa-film"></i> Generate Video
+                                    </button>
+                                    <button onClick={handleReset} className="w-full md:w-auto px-6 py-4 rounded-2xl font-semibold text-lg transition-all flex items-center justify-center gap-3 bg-gray-700 hover:bg-gray-600 text-white active:scale-[0.98]">
+                                        <i className="fas fa-redo"></i> Reset
                                     </button>
                                 </section>
                             </>

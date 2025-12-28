@@ -10,6 +10,8 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
     const [predictions, setPredictions] = useState<Prediction[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [hoveredVideoUrl, setHoveredVideoUrl] = useState<string | null>(null);
+    const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
 
     const fetchHistory = useCallback(async () => {
         const WAVESPEED_API_KEY = localStorage.getItem('wavespeedApiKey');
@@ -112,9 +114,19 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
                 <div className="flex flex-col h-full glass border-l border-purple-500/20">
                 <div className="flex items-center justify-between p-4 border-b border-gray-800">
                     <h2 className="text-xl font-semibold">Generation History</h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
-                        <i className="fas fa-times text-xl"></i>
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={fetchHistory} 
+                            disabled={isLoading}
+                            className={`text-gray-500 hover:text-purple-400 transition-colors p-2 rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed ${isLoading ? 'animate-spin' : ''}`}
+                            title="Refresh History"
+                        >
+                            <i className="fas fa-sync-alt text-lg"></i>
+                        </button>
+                        <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
+                            <i className="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <div className="flex-grow overflow-y-auto p-4">
@@ -146,6 +158,36 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
                                             <li
                                                 key={pred.id}
                                                 onClick={() => pred.status === 'completed' && pred.outputs.length > 0 && onSelectVideo(pred.outputs[0])}
+                                                onMouseEnter={(e) => {
+                                                    if (pred.status === 'completed' && pred.outputs.length > 0) {
+                                                        const rect = e.currentTarget.getBoundingClientRect();
+                                                        const popupWidth = 400;
+                                                        const popupHeight = 300;
+                                                        const spacing = 20;
+                                                        
+                                                        // Calculate position to the left of sidebar
+                                                        let x = rect.left - popupWidth - spacing;
+                                                        let y = rect.top;
+                                                        
+                                                        // Ensure popup stays within viewport
+                                                        if (x < 20) {
+                                                            x = 20; // Minimum left margin
+                                                        }
+                                                        if (y + popupHeight > window.innerHeight - 20) {
+                                                            y = window.innerHeight - popupHeight - 20; // Adjust if too low
+                                                        }
+                                                        if (y < 20) {
+                                                            y = 20; // Minimum top margin
+                                                        }
+                                                        
+                                                        setHoveredVideoUrl(pred.outputs[0]);
+                                                        setHoverPosition({ x, y });
+                                                    }
+                                                }}
+                                                onMouseLeave={() => {
+                                                    setHoveredVideoUrl(null);
+                                                    setHoverPosition(null);
+                                                }}
                                                 className={`glass p-3 rounded-xl transition-all ${pred.status === 'completed' ? 'cursor-pointer hover:border-purple-500' : 'cursor-default'}`}
                                             >
                                                 <div className="flex items-center gap-4">
@@ -183,6 +225,29 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
                 </div>
                 </div>
             </div>
+            
+            {/* Video Preview Popup */}
+            {hoveredVideoUrl && hoverPosition && (
+                <div 
+                    className="fixed z-50 pointer-events-none animate-in fade-in duration-200"
+                    style={{
+                        left: `${hoverPosition.x}px`,
+                        top: `${hoverPosition.y}px`,
+                        width: '400px'
+                    }}
+                >
+                    <div className="glass rounded-xl p-4 border border-purple-500/30 shadow-lg neon-glow">
+                        <video 
+                            src={hoveredVideoUrl} 
+                            autoPlay 
+                            loop 
+                            muted 
+                            playsInline
+                            className="w-full rounded-lg max-h-[300px] object-contain"
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
