@@ -15,6 +15,7 @@ const Layout: React.FC = () => {
   const [balance, setBalance] = useState<number | null>(null);
   const [isBalanceLoading, setIsBalanceLoading] = useState(false);
   const [balanceError, setBalanceError] = useState<string | null>(null);
+  const [isHistoryButtonPulsing, setIsHistoryButtonPulsing] = useState(false);
 
   const fetchBalance = useCallback(async () => {
     const wavespeedApiKey = localStorage.getItem('wavespeedApiKey');
@@ -76,6 +77,13 @@ const Layout: React.FC = () => {
     setIsHistoryVisible(false);
   };
 
+  const handlePulseHistoryButton = () => {
+    setIsHistoryButtonPulsing(true);
+    setTimeout(() => {
+      setIsHistoryButtonPulsing(false);
+    }, 2000);
+  };
+
   return (
     <div className="min-h-screen">
       <header className="w-full px-2 sm:px-6 lg:px-8 bg-gray-900/95 backdrop-blur-sm border-b border-purple-500/20">
@@ -96,7 +104,15 @@ const Layout: React.FC = () => {
                 <span className="text-gray-500">N/A</span>
               )}
             </div>
-            <button onClick={() => setIsHistoryVisible(true)} className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-gray-800 transition-colors" title="View History">
+            <button 
+              onClick={() => setIsHistoryVisible(true)} 
+              className={`p-2 rounded-full transition-colors relative ${
+                isHistoryButtonPulsing 
+                  ? 'text-purple-400 bg-purple-500/20 pulse-highlight' 
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
+              }`}
+              title="View History"
+            >
               <i className="fas fa-history text-lg sm:text-xl"></i>
             </button>
             <button onClick={() => setIsSettingsOpen(true)} className="p-2 rounded-full text-gray-400 hover:text-white hover:bg-gray-800 transition-colors" title="Settings">
@@ -130,7 +146,7 @@ const Layout: React.FC = () => {
           <VideoCreator 
             selectedHistoryVideoUrl={selectedHistoryVideoUrl}
             clearSelectedHistoryVideoUrl={() => setSelectedHistoryVideoUrl(null)}
-            onOpenHistory={() => setIsHistoryVisible(true)}
+            onPulseHistoryButton={handlePulseHistoryButton}
           />
         </div>
       </main>

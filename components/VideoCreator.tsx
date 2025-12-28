@@ -5,10 +5,10 @@ import FileUpload from './FileUpload';
 interface VideoCreatorProps {
   selectedHistoryVideoUrl: string | null;
   clearSelectedHistoryVideoUrl: () => void;
-  onOpenHistory?: () => void;
+  onPulseHistoryButton?: () => void;
 }
 
-const VideoCreator: React.FC<VideoCreatorProps> = ({ selectedHistoryVideoUrl, clearSelectedHistoryVideoUrl, onOpenHistory }) => {
+const VideoCreator: React.FC<VideoCreatorProps> = ({ selectedHistoryVideoUrl, clearSelectedHistoryVideoUrl, onPulseHistoryButton }) => {
     const [imageData, setImageData] = useState<FileData | null>(null);
     const [prompt, setPrompt] = useState('');
     const [duration, setDuration] = useState(5);
@@ -96,16 +96,14 @@ const VideoCreator: React.FC<VideoCreatorProps> = ({ selectedHistoryVideoUrl, cl
             const requestId = prediction.id;
 
             if (!requestId) {
-                // Instead of error, show success message and open history
+                // Instead of error, show success message and pulse history button
                 setLoading(false);
                 setLoadingMessage('');
-                setSuccessMessage("Your Video is processing and placed in the Generation History");
-                // Open history sidebar after a short delay
-                setTimeout(() => {
-                    if (onOpenHistory) {
-                        onOpenHistory();
-                    }
-                }, 500);
+                setSuccessMessage("Your video is now processing and placed in the Generation History Section");
+                // Pulse history button
+                if (onPulseHistoryButton) {
+                    onPulseHistoryButton();
+                }
                 return;
             }
 
