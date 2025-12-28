@@ -24,12 +24,12 @@ const ImageDisplay: React.FC<ImageDisplayProps> = ({ title, icon, imageSrc, onVi
     }
   };
 
-  const actionButtonClasses = "bg-gray-800/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-blue-600 transition-colors border border-gray-700 flex items-center gap-2";
+  const actionButtonClasses = "bg-gray-800/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-purple-600 transition-colors border border-gray-700 flex items-center gap-2";
 
   return (
     <div className="glass rounded-3xl p-6 flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
+        <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 neon-glow">
           <i className={icon}></i>
         </div>
         <h3 className="font-semibold text-lg">{title}</h3>

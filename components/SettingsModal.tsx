@@ -68,7 +68,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSave }
                     value={wavespeedKey}
                     onChange={(e) => setWavespeedKey(e.target.value)}
                     placeholder="Enter your Wavespeed API key"
-                    className="w-full bg-black/40 rounded-lg p-3 border border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-300"
+                    className="w-full bg-black/40 rounded-lg p-3 border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
                 />
             </div>
              <div>
@@ -78,7 +78,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSave }
                     value={geminiKey}
                     onChange={(e) => setGeminiKey(e.target.value)}
                     placeholder="Enter your Gemini API key"
-                    className="w-full bg-black/40 rounded-lg p-3 border border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-300"
+                    className="w-full bg-black/40 rounded-lg p-3 border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
                 />
                 <p className="text-xs text-gray-500 mt-2">Required for all Gemini AI features including Stage Creator, image analysis, and content generation.</p>
             </div>
@@ -87,7 +87,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSave }
             <button onClick={onClose} className="px-6 py-2 rounded-xl font-semibold transition-all bg-gray-700 hover:bg-gray-600">
                 Cancel
             </button>
-            <button onClick={handleSave} className="px-6 py-2 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white">
+            <button onClick={handleSave} className="px-6 py-2 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white neon-glow neon-glow-hover">
                 {saved ? <><i className="fas fa-check"></i> Saved!</> : 'Save Keys'}
             </button>
         </div>

@@ -56,7 +56,7 @@ const RemovePeopleModal: React.FC<RemovePeopleModalProps> = ({
             <button
               onClick={onConfirmAndSetBackground}
               disabled={isProcessing}
-              className="w-full md:w-auto px-6 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-50"
+              className="w-full md:w-auto px-6 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white neon-glow neon-glow-hover disabled:opacity-50"
             >
               <i className="fas fa-image"></i>
               Use as Background

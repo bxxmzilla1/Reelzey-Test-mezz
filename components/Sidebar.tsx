@@ -8,7 +8,7 @@ interface TabsProps {
 
 const Tabs: React.FC<TabsProps> = ({ activeView, onViewChange }) => {
   const tabBaseClasses = "px-6 sm:px-8 py-3 text-lg font-semibold rounded-xl transition-colors duration-200 flex items-center justify-center";
-  const activeTabClasses = "bg-blue-600 text-white";
+  const activeTabClasses = "bg-purple-600 text-white neon-glow";
   const inactiveTabClasses = "text-gray-400 bg-gray-800 hover:bg-gray-700 hover:text-white";
 
   const handleClick = (e: React.MouseEvent, view: string) => {

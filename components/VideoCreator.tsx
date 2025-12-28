@@ -170,10 +170,10 @@ const VideoCreator: React.FC<VideoCreatorProps> = ({ selectedHistoryVideoUrl, cl
                                         <div className="glass p-6 rounded-3xl">
                                              <label className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-4 block">3. Select Duration</label>
                                              <div className="flex items-center gap-4">
-                                                <button onClick={() => setDuration(5)} className={`w-full py-3 rounded-lg font-semibold transition-colors ${duration === 5 ? 'bg-fuchsia-600 text-white' : 'bg-gray-800 hover:bg-gray-700'}`}>
+                                                <button onClick={() => setDuration(5)} className={`w-full py-3 rounded-lg font-semibold transition-colors ${duration === 5 ? 'bg-purple-600 text-white neon-glow' : 'bg-gray-800 hover:bg-gray-700'}`}>
                                                     5 seconds
                                                 </button>
-                                                <button onClick={() => setDuration(10)} className={`w-full py-3 rounded-lg font-semibold transition-colors ${duration === 10 ? 'bg-fuchsia-600 text-white' : 'bg-gray-800 hover:bg-gray-700'}`}>
+                                                <button onClick={() => setDuration(10)} className={`w-full py-3 rounded-lg font-semibold transition-colors ${duration === 10 ? 'bg-purple-600 text-white neon-glow' : 'bg-gray-800 hover:bg-gray-700'}`}>
                                                     10 seconds
                                                 </button>
                                              </div>
@@ -181,7 +181,7 @@ const VideoCreator: React.FC<VideoCreatorProps> = ({ selectedHistoryVideoUrl, cl
                                     </div>
                                 </section>
                                 <section className="flex flex-col items-center">
-                                    <button onClick={handleGenerateVideo} disabled={isGenerateDisabled} className="w-full md:w-1/2 lg:w-1/3 py-4 rounded-2xl font-semibold text-lg transition-all flex items-center justify-center gap-3 bg-fuchsia-600 hover:bg-fuchsia-500 text-white shadow-lg shadow-fuchsia-600/30 active:scale-[0.98] disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed">
+                                    <button onClick={handleGenerateVideo} disabled={isGenerateDisabled} className="w-full md:w-1/2 lg:w-1/3 py-4 rounded-2xl font-semibold text-lg transition-all flex items-center justify-center gap-3 bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-600/40 neon-glow neon-glow-hover active:scale-[0.98] disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed disabled:neon-glow-0">
                                         <i className="fas fa-film"></i> Generate Video
                                     </button>
                                 </section>
@@ -202,7 +202,7 @@ const VideoCreator: React.FC<VideoCreatorProps> = ({ selectedHistoryVideoUrl, cl
                                     </div>
                                     
                                     <div className="mt-6 flex flex-col md:flex-row gap-4 md:gap-6 items-center justify-center border-t border-gray-700/50 pt-6">
-                                        <a href={generatedVideoUrl} download={`generated_video_${duration}s.mp4`} className="text-sm font-semibold text-fuchsia-400 hover:text-fuchsia-300 transition-colors flex items-center gap-2 bg-gray-800 px-4 py-2 rounded-lg">
+                                        <a href={generatedVideoUrl} download={`generated_video_${duration}s.mp4`} className="text-sm font-semibold text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-2 bg-gray-800 px-4 py-2 rounded-lg border border-purple-500/30 hover:border-purple-500/50">
                                             <i className="fas fa-download"></i> Download Video
                                         </a>
                                     </div>

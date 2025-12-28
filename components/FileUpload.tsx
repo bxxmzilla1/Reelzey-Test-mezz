@@ -42,7 +42,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSele
     }
   };
 
-  const actionButtonClasses = "bg-gray-800/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-blue-600 transition-colors border border-gray-700 flex items-center gap-2";
+  const actionButtonClasses = "bg-gray-800/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-purple-600 transition-colors border border-gray-700 flex items-center gap-2";
 
   return (
     <div className="flex flex-col gap-3" onPaste={handlePaste}>
@@ -55,7 +55,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSele
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
         />
         <div
-          className={`rounded-2xl border-2 border-dashed border-gray-700 group-hover:border-blue-500 transition-colors flex flex-col items-center justify-center bg-gray-900/50 overflow-hidden ${
+          className={`rounded-2xl border-2 border-dashed border-gray-700 group-hover:border-purple-500 transition-colors flex flex-col items-center justify-center bg-gray-900/50 overflow-hidden ${
             !preview ? 'h-48' : 'h-64'
           }`}
         >
@@ -67,7 +67,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSele
             )
           ) : (
             <>
-              <i className={`${icon} text-4xl text-gray-500 mb-3 group-hover:text-blue-400 transition-colors`}></i>
+              <i className={`${icon} text-4xl text-gray-500 mb-3 group-hover:text-purple-400 transition-colors`}></i>
               <p className="text-lg text-gray-500 group-hover:text-gray-300">Click, drag, or paste media</p>
             </>
           )}

@@ -196,7 +196,7 @@ const App: React.FC = () => {
 
   const StepHeading = ({ number, title }: { number: number; title: string }) => (
     <div className="flex items-center gap-4 mb-4">
-      <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">{number}</div>
+      <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold neon-glow">{number}</div>
       <h2 className="text-2xl font-semibold tracking-wide">{title}</h2>
     </div>
   );
@@ -205,7 +205,7 @@ const App: React.FC = () => {
     <button
       key={view}
       onClick={() => { setCameraView(view); setWorkflowStep(6); }}
-      className="w-full py-4 rounded-xl font-semibold text-lg transition-all flex flex-col items-center justify-center gap-3 bg-gray-800 hover:bg-blue-600 text-white shadow-lg active:scale-95"
+      className="w-full py-4 rounded-xl font-semibold text-lg transition-all flex flex-col items-center justify-center gap-3 bg-gray-800 hover:bg-purple-600 text-white shadow-lg shadow-purple-900/20 active:scale-95 neon-glow-hover"
     >
       <i className={`fas ${icon} text-2xl`}></i>
       <span>{view}</span>
@@ -234,7 +234,7 @@ const App: React.FC = () => {
             <div className="glass p-6 rounded-3xl flex flex-col items-center gap-4">
               <p className="text-gray-400 text-center">You can either remove people from the source image to create a clean background, or use the source image as is.</p>
               <div className="flex flex-col md:flex-row gap-4 mt-2">
-                <button onClick={handleOpenModal} className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95">
+                <button onClick={handleOpenModal} className="w-full md:w-auto bg-purple-600 hover:bg-purple-500 text-white font-semibold px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 neon-glow neon-glow-hover">
                   <i className="fas fa-user-slash"></i> Edit Background
                 </button>
                 <button onClick={handleUseSourceAsBackground} className="w-full md:w-auto bg-gray-700 hover:bg-gray-600 text-white font-semibold px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95">
@@ -286,7 +286,7 @@ const App: React.FC = () => {
                             </button>
                         </div>
                         <textarea
-                            className="w-full h-full min-h-[200px] md:min-h-0 bg-black/40 rounded-xl p-4 border border-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-300 placeholder-gray-500"
+                            className="w-full h-full min-h-[200px] md:min-h-0 bg-black/40 rounded-xl p-4 border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300 placeholder-gray-500"
                             rows={8}
                             placeholder="Upload an image and click 'Generate Description', or manually describe the clothing... e.g., a red formal dress with gold accents, a casual black t-shirt and blue jeans..."
                             value={clothingDescription}
@@ -297,7 +297,7 @@ const App: React.FC = () => {
                         <button onClick={() => { setClothingDescription(''); setWorkflowStep(5); }} className="w-full md:w-auto bg-gray-700 hover:bg-gray-600 text-white font-semibold px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95">
                             Skip <i className="fas fa-arrow-right"></i>
                         </button>
-                         <button onClick={() => setWorkflowStep(5)} className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95">
+                         <button onClick={() => setWorkflowStep(5)} className="w-full md:w-auto bg-purple-600 hover:bg-purple-500 text-white font-semibold px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 neon-glow neon-glow-hover">
                             <i className="fas fa-check"></i> Confirm
                         </button>
                     </div>
@@ -333,7 +333,7 @@ const App: React.FC = () => {
         {workflowStep >= 6 && (
           <section className="animate-in fade-in slide-in-from-bottom-5 duration-700 flex flex-col items-center">
             <StepHeading number={6} title="Generate Prompt" />
-            <button onClick={handleGenerate} disabled={loading} className="w-full md:w-1/2 lg:w-1/3 py-4 rounded-2xl font-semibold text-lg transition-all flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20 active:scale-[0.98] disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed">
+            <button onClick={handleGenerate} disabled={loading} className="w-full md:w-1/2 lg:w-1/3 py-4 rounded-2xl font-semibold text-lg transition-all flex items-center justify-center gap-3 bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-900/30 neon-glow neon-glow-hover active:scale-[0.98] disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed disabled:neon-glow-0">
               {loading ? ( <><svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Analyzing...</> ) : ( <><i className="fas fa-wand-magic-sparkles"></i>Generate Stage Prompt</> )}
             </button>
           </section>

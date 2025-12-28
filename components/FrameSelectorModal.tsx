@@ -113,7 +113,7 @@ const FrameSelectorModal: React.FC<FrameSelectorModalProps> = ({ isOpen, videoFi
         <div className="flex justify-end pt-4 border-t border-gray-700/50">
           <button
             onClick={handleSelectFrame}
-            className="w-full md:w-auto px-6 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white"
+            className="w-full md:w-auto px-6 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-500 text-white neon-glow neon-glow-hover"
           >
             <i className="fas fa-check-circle"></i>
             Confirm Frame

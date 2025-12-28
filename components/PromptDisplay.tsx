@@ -20,7 +20,7 @@ const PromptDisplay: React.FC<PromptDisplayProps> = ({ title, content, icon }) =
     <div className="glass rounded-3xl p-6 flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
+          <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400 neon-glow">
             <i className={icon}></i>
           </div>
           <h3 className="font-semibold text-lg">{title}</h3>
