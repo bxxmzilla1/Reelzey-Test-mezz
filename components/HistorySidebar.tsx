@@ -12,6 +12,7 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
     const [error, setError] = useState<string | null>(null);
     const [hoveredVideoUrl, setHoveredVideoUrl] = useState<string | null>(null);
     const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     const fetchHistory = useCallback(async () => {
         const WAVESPEED_API_KEY = localStorage.getItem('wavespeedApiKey');
@@ -105,6 +106,67 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
         }
     };
 
+    const toggleSelection = (predictionId: string, e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent triggering video selection
+        setSelectedIds(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(predictionId)) {
+                newSet.delete(predictionId);
+            } else {
+                newSet.add(predictionId);
+            }
+            return newSet;
+        });
+    };
+
+    const handleDownloadSelected = async () => {
+        const selectedPredictions = predictions.filter(p => 
+            selectedIds.has(p.id) && 
+            p.status === 'completed' && 
+            p.outputs && 
+            p.outputs.length > 0
+        );
+
+        if (selectedPredictions.length === 0) {
+            return;
+        }
+
+        // Download each video
+        for (let i = 0; i < selectedPredictions.length; i++) {
+            const pred = selectedPredictions[i];
+            const videoUrl = pred.outputs[0];
+            const date = new Date(pred.created_at);
+            const dateStr = date.toISOString().split('T')[0];
+            const timeStr = date.toTimeString().split(' ')[0].replace(/:/g, '-');
+            const filename = `video_${dateStr}_${timeStr}_${pred.id.slice(0, 8)}.mp4`;
+
+            try {
+                const response = await fetch(videoUrl);
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+
+                // Small delay between downloads to prevent browser blocking
+                if (i < selectedPredictions.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+            } catch (err) {
+                console.error(`Failed to download video ${pred.id}:`, err);
+            }
+        }
+
+        // Clear selection after download
+        setSelectedIds(new Set());
+    };
+
+    const selectedCount = selectedIds.size;
+
     return (
         <div 
             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 animate-in fade-in duration-300"
@@ -128,6 +190,19 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
                         </button>
                     </div>
                 </div>
+
+                {/* Download Button - Shows when items are selected */}
+                {selectedCount > 0 && (
+                    <div className="px-4 py-3 border-b border-gray-800 bg-purple-500/10">
+                        <button
+                            onClick={handleDownloadSelected}
+                            className="w-full py-2 px-4 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 neon-glow"
+                        >
+                            <i className="fas fa-download"></i>
+                            Download {selectedCount} {selectedCount === 1 ? 'Video' : 'Videos'}
+                        </button>
+                    </div>
+                )}
 
                 <div className="flex-grow overflow-y-auto p-4">
                     {isLoading && (
@@ -188,8 +263,30 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
                                                     setHoveredVideoUrl(null);
                                                     setHoverPosition(null);
                                                 }}
-                                                className={`glass p-3 rounded-xl transition-all ${pred.status === 'completed' ? 'cursor-pointer hover:border-purple-500' : 'cursor-default'}`}
+                                                className={`glass p-3 rounded-xl transition-all relative ${
+                                                    pred.status === 'completed' 
+                                                        ? `cursor-pointer hover:border-purple-500 ${selectedIds.has(pred.id) ? 'border-purple-500 bg-purple-500/10' : ''}` 
+                                                        : 'cursor-default'
+                                                }`}
                                             >
+                                                {/* Checkbox for selection */}
+                                                {pred.status === 'completed' && pred.outputs.length > 0 && (
+                                                    <div 
+                                                        className="absolute top-2 left-2 z-10"
+                                                        onClick={(e) => toggleSelection(pred.id, e)}
+                                                    >
+                                                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                                                            selectedIds.has(pred.id)
+                                                                ? 'bg-purple-600 border-purple-600'
+                                                                : 'bg-gray-800/80 border-gray-600 hover:border-purple-500'
+                                                        }`}>
+                                                            {selectedIds.has(pred.id) && (
+                                                                <i className="fas fa-check text-white text-xs"></i>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-16 h-16 bg-black/40 rounded-lg flex items-center justify-center text-gray-600">
                                                         {pred.status === 'completed' && pred.outputs.length > 0 ? (
