@@ -185,15 +185,6 @@ const VideoCreator: React.FC<VideoCreatorProps> = ({ selectedHistoryVideoUrl, cl
                                         <i className="fas fa-film"></i> Generate Video
                                     </button>
                                 </section>
-                                <section>
-                                    <div className="glass rounded-3xl p-6 flex flex-col gap-4 items-center justify-center min-h-[300px] border-2 border-dashed border-gray-700">
-                                        <div className="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center text-gray-500 text-2xl mb-4">
-                                            <i className="fas fa-video"></i>
-                                        </div>
-                                        <h3 className="font-semibold text-lg text-gray-400">Generated Video Preview</h3>
-                                        <p className="text-gray-500 text-center text-sm">The generated video will appear here after processing.</p>
-                                    </div>
-                                </section>
                             </>
                         )}
                         
