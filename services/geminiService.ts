@@ -2,6 +2,46 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AnalysisResult } from "../types";
 
+// Helper function to get API key from localStorage
+const getApiKey = (): string => {
+  const apiKey = localStorage.getItem('geminiApiKey');
+  if (!apiKey || apiKey.trim() === '') {
+    throw new Error('Gemini API key not found. Please set it in Settings.');
+  }
+  return apiKey.trim();
+};
+
+// Helper function to create GoogleGenAI instance with API key from localStorage
+const createGoogleGenAI = (): GoogleGenAI => {
+  const apiKey = getApiKey();
+  
+  // Update global variables for libraries that check environment variables
+  if (typeof window !== 'undefined') {
+    (window as any).GOOGLE_GEN_AI_API_KEY = apiKey;
+    // Ensure process.env exists
+    if (typeof process === 'undefined') {
+      (window as any).process = { env: {} };
+    } else if (!process.env) {
+      process.env = {};
+    }
+    if (process && process.env) {
+      process.env.GOOGLE_GEN_AI_API_KEY = apiKey;
+      process.env.GEMINI_API_KEY = apiKey;
+    }
+  }
+  
+  // Create instance with explicit API key
+  try {
+    return new GoogleGenAI({ apiKey });
+  } catch (error: any) {
+    // If the library still complains, provide a more helpful error
+    if (error.message && error.message.includes('API Key')) {
+      throw new Error('Gemini API key is required. Please set it in Settings and refresh the page.');
+    }
+    throw error;
+  }
+};
+
 export const analyzeMedia = async (
   sourcePersonImageBase64: string,
   sourcePersonImageMimeType: string,
@@ -12,7 +52,7 @@ export const analyzeMedia = async (
   clothingDescription: string | null,
   cameraView: string | null
 ): Promise<AnalysisResult> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = createGoogleGenAI();
 
   const clothingInstruction = clothingDescription
     ? `- The person is wearing: ${clothingDescription}. Describe their pose from the source person image.`
@@ -106,7 +146,7 @@ export const removePeopleFromImage = async (
   base64: string,
   mimeType: string
 ): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = createGoogleGenAI();
 
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
@@ -151,7 +191,7 @@ export const describeClothing = async (
   base64: string,
   mimeType: string
 ): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = createGoogleGenAI();
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: [
@@ -184,7 +224,7 @@ export const upscaleImage = async (
   base64: string,
   mimeType: string
 ): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = createGoogleGenAI();
 
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
@@ -230,7 +270,7 @@ export const generate360Image = async (
   base64: string,
   mimeType: string
 ): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = createGoogleGenAI();
 
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
@@ -274,7 +314,7 @@ export const generate360Image = async (
 export const analyzeActionsFromFrames = async (
   frames: { base64: string; mimeType: string }[]
 ): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = createGoogleGenAI();
 
   const promptParts: any[] = [
     {

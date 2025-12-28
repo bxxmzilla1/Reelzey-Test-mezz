@@ -24,6 +24,22 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSave }
     localStorage.setItem('geminiApiKey', geminiKey);
     localStorage.setItem('wavespeedApiKey', wavespeedKey);
     
+    // Update global variables for libraries that check them
+    if (typeof window !== 'undefined' && geminiKey) {
+      (window as any).GOOGLE_GEN_AI_API_KEY = geminiKey;
+      if (typeof process !== 'undefined' && process.env) {
+        process.env.GOOGLE_GEN_AI_API_KEY = geminiKey;
+        process.env.GEMINI_API_KEY = geminiKey;
+      } else if (typeof window !== 'undefined') {
+        // Polyfill process.env if needed
+        if (!(window as any).process) {
+          (window as any).process = { env: {} };
+        }
+        (window as any).process.env.GOOGLE_GEN_AI_API_KEY = geminiKey;
+        (window as any).process.env.GEMINI_API_KEY = geminiKey;
+      }
+    }
+    
     if (onSave) {
       onSave();
     }
@@ -64,7 +80,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSave }
                     placeholder="Enter your Gemini API key"
                     className="w-full bg-black/40 rounded-lg p-3 border border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-300"
                 />
-                <p className="text-xs text-gray-500 mt-2">Note: For this tool, the Gemini API key is typically pre-configured. Changes here might not affect the Stage Creator functionality.</p>
+                <p className="text-xs text-gray-500 mt-2">Required for all Gemini AI features including Stage Creator, image analysis, and content generation.</p>
             </div>
         </div>
         <div className="flex gap-4 justify-end border-t border-gray-700/50 pt-6 mt-2">

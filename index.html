@@ -51,6 +51,31 @@
 </head>
 <body>
     <div id="root"></div>
+<script>
+  // Set up API key from localStorage before modules load
+  // This ensures the API key is available for libraries that check environment variables
+  (function() {
+    try {
+      const apiKey = localStorage.getItem('geminiApiKey');
+      if (apiKey) {
+        // Set as global variable for browser environments
+        window.GOOGLE_GEN_AI_API_KEY = apiKey;
+        // Polyfill process.env if it doesn't exist
+        if (typeof process === 'undefined') {
+          window.process = { env: {} };
+        } else if (!process.env) {
+          process.env = {};
+        }
+        if (process && process.env) {
+          process.env.GOOGLE_GEN_AI_API_KEY = apiKey;
+          process.env.GEMINI_API_KEY = apiKey;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not set up API key from localStorage:', e);
+    }
+  })();
+</script>
 <script type="module" src="/index.tsx"></script>
 <script>
   // Register service worker for PWA
