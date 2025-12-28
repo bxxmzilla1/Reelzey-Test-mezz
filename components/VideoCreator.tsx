@@ -5,15 +5,17 @@ import FileUpload from './FileUpload';
 interface VideoCreatorProps {
   selectedHistoryVideoUrl: string | null;
   clearSelectedHistoryVideoUrl: () => void;
+  onOpenHistory?: () => void;
 }
 
-const VideoCreator: React.FC<VideoCreatorProps> = ({ selectedHistoryVideoUrl, clearSelectedHistoryVideoUrl }) => {
+const VideoCreator: React.FC<VideoCreatorProps> = ({ selectedHistoryVideoUrl, clearSelectedHistoryVideoUrl, onOpenHistory }) => {
     const [imageData, setImageData] = useState<FileData | null>(null);
     const [prompt, setPrompt] = useState('');
     const [duration, setDuration] = useState(5);
     const [loading, setLoading] = useState(false);
     const [loadingMessage, setLoadingMessage] = useState('');
     const [error, setError] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
     
     useEffect(() => {
@@ -40,6 +42,7 @@ const VideoCreator: React.FC<VideoCreatorProps> = ({ selectedHistoryVideoUrl, cl
         setLoading(false);
         setLoadingMessage('');
         setError(null);
+        setSuccessMessage(null);
         setGeneratedVideoUrl(null);
     };
 
@@ -58,6 +61,7 @@ const VideoCreator: React.FC<VideoCreatorProps> = ({ selectedHistoryVideoUrl, cl
 
         setLoading(true);
         setError(null);
+        setSuccessMessage(null);
         setGeneratedVideoUrl(null);
         setLoadingMessage("Submitting your request...");
 
@@ -92,7 +96,17 @@ const VideoCreator: React.FC<VideoCreatorProps> = ({ selectedHistoryVideoUrl, cl
             const requestId = prediction.id;
 
             if (!requestId) {
-                throw new Error("API did not return a request ID.");
+                // Instead of error, show success message and open history
+                setLoading(false);
+                setLoadingMessage('');
+                setSuccessMessage("Your Video is processing and placed in the Generation History");
+                // Open history sidebar after a short delay
+                setTimeout(() => {
+                    if (onOpenHistory) {
+                        onOpenHistory();
+                    }
+                }, 500);
+                return;
             }
 
             let attempts = 0;
@@ -219,6 +233,7 @@ const VideoCreator: React.FC<VideoCreatorProps> = ({ selectedHistoryVideoUrl, cl
                 )}
 
                 {error && <div className="mt-4 w-full p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex gap-3 items-start"><i className="fas fa-exclamation-triangle mt-1"></i><p>{error}</p></div>}
+                {successMessage && <div className="mt-4 w-full p-4 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 text-sm flex gap-3 items-start"><i className="fas fa-check-circle mt-1"></i><p>{successMessage}</p></div>}
             </main>
         </div>
     );

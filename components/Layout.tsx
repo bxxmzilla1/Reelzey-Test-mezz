@@ -130,6 +130,7 @@ const Layout: React.FC = () => {
           <VideoCreator 
             selectedHistoryVideoUrl={selectedHistoryVideoUrl}
             clearSelectedHistoryVideoUrl={() => setSelectedHistoryVideoUrl(null)}
+            onOpenHistory={() => setIsHistoryVisible(true)}
           />
         </div>
       </main>
