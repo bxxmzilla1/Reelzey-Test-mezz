@@ -65,6 +65,38 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
         return <span className={`px-2 py-1 text-xs font-semibold rounded-md border ${colorClasses} capitalize`}>{status}</span>;
     };
 
+    const groupPredictionsByDate = (predictions: Prediction[]) => {
+        const grouped: { [key: string]: Prediction[] } = {};
+        
+        predictions.forEach(pred => {
+            const date = new Date(pred.created_at);
+            const dateKey = date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            if (!grouped[dateKey]) {
+                grouped[dateKey] = [];
+            }
+            grouped[dateKey].push(pred);
+        });
+
+        // Sort dates in descending order (newest first)
+        return Object.keys(grouped)
+            .sort((a, b) => {
+                const dateA = new Date(a);
+                const dateB = new Date(b);
+                return dateB.getTime() - dateA.getTime();
+            })
+            .map(dateKey => ({
+                date: dateKey,
+                predictions: grouped[dateKey].sort((a, b) => {
+                    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+                })
+            }));
+    };
+
     return (
         <div className="fixed top-0 right-0 h-full w-full md:w-96 bg-gray-900/50 backdrop-blur-lg z-40 animate-in slide-in-from-right-full duration-300">
             <div className="flex flex-col h-full glass border-l border-fuchsia-500/20">
@@ -85,34 +117,56 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
                     {!isLoading && !error && predictions.length === 0 && (
                         <p className="text-gray-500 text-center mt-8">No recent video generations found.</p>
                     )}
-                    <ul className="space-y-3">
-                        {predictions.map(pred => (
-                            <li
-                                key={pred.id}
-                                onClick={() => pred.status === 'completed' && pred.outputs.length > 0 && onSelectVideo(pred.outputs[0])}
-                                className={`glass p-3 rounded-xl transition-all ${pred.status === 'completed' ? 'cursor-pointer hover:border-fuchsia-500' : 'cursor-default'}`}
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className="w-16 h-16 bg-black/40 rounded-lg flex items-center justify-center text-gray-600">
-                                        {pred.status === 'completed' && pred.outputs.length > 0 ? (
-                                             <video src={pred.outputs[0]} className="w-full h-full object-cover rounded-lg" muted playsInline />
-                                        ) : (
-                                            <i className="fas fa-film text-2xl"></i>
-                                        )}
+                    {!isLoading && !error && predictions.length > 0 && (
+                        <div className="space-y-6">
+                            {groupPredictionsByDate(predictions).map(({ date, predictions: datePredictions }) => (
+                                <div key={date} className="space-y-3">
+                                    {/* Date Separator */}
+                                    <div className="flex items-center gap-3 py-2">
+                                        <div className="flex-grow border-t border-purple-500/30"></div>
+                                        <span className="text-xs font-semibold text-purple-400 uppercase tracking-wider px-3">
+                                            {date}
+                                        </span>
+                                        <div className="flex-grow border-t border-purple-500/30"></div>
                                     </div>
-                                    <div className="flex-grow">
-                                        <div className="flex justify-between items-start">
-                                            <p className="text-sm font-semibold text-gray-300">Video Generation</p>
-                                            <StatusIndicator status={pred.status} />
-                                        </div>
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            {new Date(pred.created_at).toLocaleString()}
-                                        </p>
-                                    </div>
+                                    
+                                    {/* Videos for this date */}
+                                    <ul className="space-y-3">
+                                        {datePredictions.map(pred => (
+                                            <li
+                                                key={pred.id}
+                                                onClick={() => pred.status === 'completed' && pred.outputs.length > 0 && onSelectVideo(pred.outputs[0])}
+                                                className={`glass p-3 rounded-xl transition-all ${pred.status === 'completed' ? 'cursor-pointer hover:border-purple-500' : 'cursor-default'}`}
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-16 h-16 bg-black/40 rounded-lg flex items-center justify-center text-gray-600">
+                                                        {pred.status === 'completed' && pred.outputs.length > 0 ? (
+                                                             <video src={pred.outputs[0]} className="w-full h-full object-cover rounded-lg" muted playsInline />
+                                                        ) : (
+                                                            <i className="fas fa-film text-2xl"></i>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-grow">
+                                                        <div className="flex justify-between items-start">
+                                                            <p className="text-sm font-semibold text-gray-300">Video Generation</p>
+                                                            <StatusIndicator status={pred.status} />
+                                                        </div>
+                                                        <p className="text-xs text-gray-500 mt-1">
+                                                            {new Date(pred.created_at).toLocaleTimeString('en-US', { 
+                                                                hour: '2-digit', 
+                                                                minute: '2-digit',
+                                                                second: '2-digit'
+                                                            })}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </div>
-                            </li>
-                        ))}
-                    </ul>
+                            ))}
+                        </div>
+                    )}
                 </div>
                  <div className="p-4 border-t border-gray-800 text-center text-xs text-gray-600">
                     <p>Showing videos from the last 7 days.</p>
