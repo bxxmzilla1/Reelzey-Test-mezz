@@ -28,24 +28,37 @@ const Layout: React.FC = () => {
     setBalanceError(null);
     try {
       const response = await fetch('https://api.wavespeed.ai/api/v3/balance', {
+        method: 'GET',
         headers: {
           'Authorization': `Bearer ${wavespeedApiKey}`,
+          'Content-Type': 'application/json',
         },
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: `HTTP error! status: ${response.status}` }));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        throw new Error(errorData.message || errorData.msg || `HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      if (typeof data.balance === 'number') {
+      
+      // Check if the response has the expected structure (Wavespeed API format)
+      if (data.code === 200 && data.data && typeof data.data.balance === 'number') {
+        setBalance(data.data.balance);
+      } else if (typeof data.balance === 'number') {
+        // Fallback for different response format
         setBalance(data.balance);
+      } else if (data.code && data.code !== 200) {
+        // API returned an error code
+        throw new Error(data.message || data.msg || `API error: code ${data.code}`);
       } else {
-        throw new Error("Invalid balance data received from API.");
+        // Unexpected response structure
+        console.error('Unexpected balance API response:', data);
+        throw new Error(data.message || data.msg || "Invalid balance data received from API.");
       }
 
     } catch (err: any) {
+      console.error('Error fetching balance:', err);
       setBalance(null);
       setBalanceError(err.message || "Failed to fetch balance.");
     } finally {
