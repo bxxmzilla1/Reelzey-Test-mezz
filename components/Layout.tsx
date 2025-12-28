@@ -81,7 +81,7 @@ const Layout: React.FC = () => {
       <header className="w-full px-2 sm:px-6 lg:px-8 bg-gray-900 border-b border-gray-800">
         <div className="flex items-center justify-between h-16">
           <a href="#" onClick={(e) => { e.preventDefault(); setActiveView('stageCreator'); }} className="flex items-center">
-            <span className="self-center text-xl font-semibold whitespace-nowrap gradient-text">ANDREIX</span>
+            <span className="self-center text-xl font-semibold whitespace-nowrap gradient-text">Reelzey</span>
           </a>
           <div className="flex items-center gap-2 sm:gap-4">
             <div className="p-2 rounded-full text-gray-400 bg-gray-800/50 flex items-center text-sm h-9 px-3">

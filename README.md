@@ -2,7 +2,7 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# ANDREIX - AI Studio App
+# Reelzey - AI Studio App
 
 A powerful AI-powered creative studio application built with React, TypeScript, and Vite. This Progressive Web App (PWA) provides an intuitive interface for AI-driven content creation.
 
@@ -29,7 +29,7 @@ View your app in AI Studio: https://ai.studio/apps/drive/1N1CpoLkCrXNETGk0ddlg20
 1. **Clone the repository:**
    ```bash
    git clone <your-repo-url>
-   cd andreix---speedup
+   cd reelzey
    ```
 
 2. **Install dependencies:**
@@ -159,7 +159,7 @@ On mobile devices:
 ## 📂 Project Structure
 
 ```
-andreix---speedup/
+reelzey/
 ├── components/          # React components
 ├── services/           # API services (Gemini)
 ├── public/            # Static assets (PWA manifest, icons, service worker)

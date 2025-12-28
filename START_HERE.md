@@ -2,7 +2,7 @@
 
 **Total Time: ~10-15 minutes**
 
-This is your starting point for deploying ANDREIX to GitHub and Vercel.
+This is your starting point for deploying Reelzey to GitHub and Vercel.
 
 ---
 
@@ -113,7 +113,7 @@ npm run preview
 
 #### A. Create GitHub Repository
 1. Go to https://github.com/new
-2. Name: `andreix-speedup` (or your choice)
+2. Name: `reelzey` (or your choice)
 3. Visibility: Public or Private
 4. **DON'T** add README, .gitignore, or license
 5. Click "Create repository"
@@ -127,13 +127,13 @@ git init
 git add .
 
 # Create first commit
-git commit -m "Initial commit: ANDREIX PWA ready for deployment"
+git commit -m "Initial commit: Reelzey PWA ready for deployment"
 
 # Set main branch
 git branch -M main
 
 # Add GitHub remote (replace with YOUR URL)
-git remote add origin https://github.com/YOUR_USERNAME/andreix-speedup.git
+git remote add origin https://github.com/YOUR_USERNAME/reelzey.git
 
 # Push to GitHub
 git push -u origin main
@@ -145,7 +145,7 @@ git push -u origin main
 1. Go to https://vercel.com
 2. Sign in (use GitHub account)
 3. Click "Add New" → "Project"
-4. Find your `andreix-speedup` repository
+4. Find your `reelzey` repository
 5. Click "Import"
 
 #### B. Configure
@@ -273,7 +273,7 @@ navigator.serviceWorker.getRegistrations().then(regs => {
 
 ## 🎉 You're Done!
 
-Congratulations! Your ANDREIX PWA is live!
+Congratulations! Your Reelzey PWA is live!
 
 **Share it:** `https://your-project.vercel.app`
 

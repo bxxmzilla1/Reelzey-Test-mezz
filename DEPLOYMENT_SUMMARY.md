@@ -1,4 +1,4 @@
-# 🎉 ANDREIX PWA - Ready for Deployment!
+# 🎉 Reelzey PWA - Ready for Deployment!
 
 Your Progressive Web App has been successfully prepared for GitHub and Vercel deployment!
 
@@ -47,7 +47,7 @@ npm run dev
 ```bash
 git init
 git add .
-git commit -m "Initial commit: ANDREIX PWA ready for deployment"
+git commit -m "Initial commit: Reelzey PWA ready for deployment"
 git branch -M main
 git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
 git push -u origin main
@@ -124,12 +124,12 @@ git push -u origin main
 
 ## 🎊 You're All Set!
 
-Your ANDREIX PWA is production-ready! Follow the Quick Start guide above to deploy.
+Your Reelzey PWA is production-ready! Follow the Quick Start guide above to deploy.
 
 **Good luck with your deployment! 🚀**
 
 ---
 
-*Generated for ANDREIX - AI Studio App*
+*Generated for Reelzey - AI Studio App*
 *Ready for GitHub + Vercel Deployment*
 
