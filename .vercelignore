@@ -1,0 +1,28 @@
+# Files to ignore during Vercel deployment
+
+# Documentation
+*.md
+CHECKLIST.md
+DEPLOYMENT.md
+DEPLOYMENT_SUMMARY.md
+
+# Development files
+.env.local
+.env*.local
+*.log
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# Testing
+coverage
+
+# Misc
+.DS_Store
+Thumbs.db
+
