@@ -79,7 +79,8 @@ export async function generateScene(
     - Describe the physical body movements, subtle facial expressions, and changes in posture in great detail.
     - The scene must strongly evoke a "${mood}" mood.
     - The scene should be framed from a "${cameraView}" perspective.
-    - The main subject is the person in the provided image.`;
+    - The main subject is the person in the provided image.
+    - IMPORTANT RULE for smiles: When describing a smile, use subtle terms like "soft smile" or "gentle smile". Avoid exaggerated descriptions like "big smile" or "wide smile". Crucially, whenever you describe any form of smiling, you MUST follow it with the exact phrase "without stretching the face a lot".`;
 
     if (prompt) {
       systemPrompt += `\n- Incorporate the following user idea into the scene: "${prompt}"`;
