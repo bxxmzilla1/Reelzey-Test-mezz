@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import FileUpload from './components/FileUpload';
 import PromptDisplay from './components/PromptDisplay';
 import RemovePeopleModal from './components/RemovePeopleModal';
@@ -26,6 +26,16 @@ const App: React.FC = () => {
   const [cameraView, setCameraView] = useState<string | null>(null);
   const [clothingImageData, setClothingImageData] = useState<FileData | null>(null);
   const [isDescribingClothing, setIsDescribingClothing] = useState(false);
+
+  // Auto-dismiss error message after 3 seconds if it contains "Gemini API key not found"
+  useEffect(() => {
+    if (error && error.includes('Gemini API key not found')) {
+      const timer = setTimeout(() => {
+        setError(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const resetWorkflow = () => {
     setWorkflowStep(1);

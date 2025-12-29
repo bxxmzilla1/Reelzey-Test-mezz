@@ -69,6 +69,12 @@ const Layout: React.FC = () => {
 
   useEffect(() => {
     fetchBalance();
+    // Refresh balance every second
+    const interval = setInterval(() => {
+      fetchBalance();
+    }, 1000);
+    
+    return () => clearInterval(interval);
   }, [fetchBalance]);
 
   const handleSelectHistoryVideo = (url: string) => {
