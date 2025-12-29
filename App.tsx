@@ -350,7 +350,18 @@ const App: React.FC = () => {
             <div className="mt-8">
               <PromptDisplay title="Stage Prompt" icon="fas fa-couch" content={result.stagePrompt} />
             </div>
-            <div className="text-center mt-12">
+            <div className="text-center mt-8">
+              <button 
+                onClick={() => window.open('https://www.halyxis.com/', '_blank', 'noopener,noreferrer')}
+                className="w-full md:w-auto bg-teal-500 hover:bg-teal-400 text-white font-semibold px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-teal-500/40"
+                style={{
+                  boxShadow: '0 0 10px rgba(20, 184, 166, 0.3), 0 0 20px rgba(20, 184, 166, 0.2), 0 0 30px rgba(20, 184, 166, 0.1)'
+                }}
+              >
+                <i className="fas fa-external-link-alt"></i> Open Halyxis
+              </button>
+            </div>
+            <div className="text-center mt-6">
               <button onClick={resetWorkflow} className="w-full md:w-auto bg-gray-700 hover:bg-gray-600 text-white font-semibold px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95">
                 <i className="fas fa-redo"></i> Start a New Project
               </button>
