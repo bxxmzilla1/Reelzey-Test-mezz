@@ -17,7 +17,7 @@ const Layout: React.FC = () => {
   const [balanceError, setBalanceError] = useState<string | null>(null);
   const [isHistoryButtonPulsing, setIsHistoryButtonPulsing] = useState(false);
 
-  const fetchBalance = useCallback(async () => {
+  const fetchBalance = useCallback(async (showLoading = true) => {
     const wavespeedApiKey = localStorage.getItem('wavespeedApiKey');
     if (!wavespeedApiKey) {
       setBalance(null);
@@ -25,7 +25,9 @@ const Layout: React.FC = () => {
       return;
     }
 
-    setIsBalanceLoading(true);
+    if (showLoading) {
+      setIsBalanceLoading(true);
+    }
     setBalanceError(null);
     try {
       const response = await fetch('https://api.wavespeed.ai/api/v3/balance', {
@@ -63,15 +65,17 @@ const Layout: React.FC = () => {
       setBalance(null);
       setBalanceError(err.message || "Failed to fetch balance.");
     } finally {
-      setIsBalanceLoading(false);
+      if (showLoading) {
+        setIsBalanceLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    fetchBalance();
-    // Refresh balance every second
+    fetchBalance(true); // Initial load with loading indicator
+    // Refresh balance every second silently (without loading indicator)
     const interval = setInterval(() => {
-      fetchBalance();
+      fetchBalance(false);
     }, 1000);
     
     return () => clearInterval(interval);
