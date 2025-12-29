@@ -95,7 +95,7 @@ const Layout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-black">
       <header className="w-full px-2 sm:px-6 lg:px-8 bg-black backdrop-blur-sm border-b border-purple-500/20">
         <div className="flex items-center justify-between h-16">
           <a href="#" onClick={(e) => { e.preventDefault(); setActiveView('stageCreator'); }} className="flex items-center">
