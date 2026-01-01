@@ -44,6 +44,45 @@ const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSele
 
   const actionButtonClasses = "bg-gray-800/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-purple-600 transition-colors border border-gray-700 flex items-center gap-2";
 
+  const handlePasteClick = () => {
+    // Trigger paste by focusing on a hidden input and simulating paste
+    const pasteInput = document.createElement('input');
+    pasteInput.type = 'text';
+    pasteInput.style.position = 'absolute';
+    pasteInput.style.left = '-9999px';
+    document.body.appendChild(pasteInput);
+    pasteInput.focus();
+    
+    // Listen for paste event
+    const pasteHandler = (e: ClipboardEvent) => {
+      e.preventDefault();
+      const items = e.clipboardData?.items;
+      if (items) {
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          if (item.type.indexOf('image') !== -1) {
+            const file = item.getAsFile();
+            if (file) {
+              onFileSelect(file);
+            }
+          }
+        }
+      }
+      document.body.removeChild(pasteInput);
+      document.removeEventListener('paste', pasteHandler);
+    };
+    
+    document.addEventListener('paste', pasteHandler);
+    
+    // Cleanup if paste doesn't happen
+    setTimeout(() => {
+      if (document.body.contains(pasteInput)) {
+        document.body.removeChild(pasteInput);
+        document.removeEventListener('paste', pasteHandler);
+      }
+    }, 1000);
+  };
+
   return (
     <div className="flex flex-col gap-3" onPaste={handlePaste}>
       {label && <label className="text-sm font-medium text-gray-400 uppercase tracking-wider">{label}</label>}
@@ -73,14 +112,24 @@ const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSele
           )}
         </div>
       </div>
-      {preview && (
-        <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
-          {onView && <button onClick={onView} className={actionButtonClasses}><i className="fas fa-expand"></i> View</button>}
-          {onDownload && <button onClick={onDownload} className={actionButtonClasses}><i className="fas fa-download"></i> Download</button>}
-          {onCopy && <button onClick={handleCopyClick} className={actionButtonClasses}>{copied ? <><i className="fas fa-check text-green-400"></i> Copied</> : <><i className="fas fa-copy"></i> Copy</>}</button>}
-          {children}
-        </div>
-      )}
+      <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
+        {!preview && (
+          <button
+            onClick={handlePasteClick}
+            className={actionButtonClasses}
+          >
+            <i className="fas fa-paste"></i> Paste
+          </button>
+        )}
+        {preview && (
+          <>
+            {onView && <button onClick={onView} className={actionButtonClasses}><i className="fas fa-expand"></i> View</button>}
+            {onDownload && <button onClick={onDownload} className={actionButtonClasses}><i className="fas fa-download"></i> Download</button>}
+            {onCopy && <button onClick={handleCopyClick} className={actionButtonClasses}>{copied ? <><i className="fas fa-check text-green-400"></i> Copied</> : <><i className="fas fa-copy"></i> Copy</>}</button>}
+            {children}
+          </>
+        )}
+      </div>
     </div>
   );
 };
