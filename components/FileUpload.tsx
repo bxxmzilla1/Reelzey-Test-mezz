@@ -26,7 +26,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSele
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
     if (e.clipboardData.files && e.clipboardData.files.length > 0) {
       const file = e.clipboardData.files[0];
-      if (file.type.startsWith('image/')) {
+      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
         onFileSelect(file);
         e.preventDefault();
       }
@@ -44,43 +44,62 @@ const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSele
 
   const actionButtonClasses = "bg-gray-800/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-purple-600 transition-colors border border-gray-700 flex items-center gap-2";
 
-  const handlePasteClick = () => {
-    // Trigger paste by focusing on a hidden input and simulating paste
-    const pasteInput = document.createElement('input');
-    pasteInput.type = 'text';
-    pasteInput.style.position = 'absolute';
-    pasteInput.style.left = '-9999px';
-    document.body.appendChild(pasteInput);
-    pasteInput.focus();
-    
-    // Listen for paste event
-    const pasteHandler = (e: ClipboardEvent) => {
-      e.preventDefault();
-      const items = e.clipboardData?.items;
-      if (items) {
-        for (let i = 0; i < items.length; i++) {
-          const item = items[i];
-          if (item.type.indexOf('image') !== -1) {
-            const file = item.getAsFile();
-            if (file) {
-              onFileSelect(file);
-            }
+  const handlePasteClick = async () => {
+    try {
+      // Try to read clipboard items using Clipboard API
+      const clipboardItems = await navigator.clipboard.read();
+      
+      for (const clipboardItem of clipboardItems) {
+        for (const type of clipboardItem.types) {
+          if (type.startsWith('image/') || type.startsWith('video/')) {
+            const blob = await clipboardItem.getType(type);
+            const fileExtension = type.split('/')[1].split(';')[0]; // Handle MIME types like "video/mp4;codecs=..."
+            const fileName = `pasted-media.${fileExtension}`;
+            const file = new File([blob], fileName, { type });
+            onFileSelect(file);
+            return;
           }
         }
       }
-      document.body.removeChild(pasteInput);
-      document.removeEventListener('paste', pasteHandler);
-    };
-    
-    document.addEventListener('paste', pasteHandler);
-    
-    // Cleanup if paste doesn't happen
-    setTimeout(() => {
-      if (document.body.contains(pasteInput)) {
+    } catch (error) {
+      console.error('Failed to paste from clipboard:', error);
+      // Fallback: try using a temporary input element to capture paste event
+      const pasteInput = document.createElement('input');
+      pasteInput.type = 'text';
+      pasteInput.style.position = 'absolute';
+      pasteInput.style.left = '-9999px';
+      document.body.appendChild(pasteInput);
+      pasteInput.focus();
+      
+      // Listen for paste event
+      const pasteHandler = (e: ClipboardEvent) => {
+        e.preventDefault();
+        const items = e.clipboardData?.items;
+        if (items) {
+          for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            if (item.type.indexOf('image') !== -1 || item.type.indexOf('video') !== -1) {
+              const file = item.getAsFile();
+              if (file) {
+                onFileSelect(file);
+              }
+            }
+          }
+        }
         document.body.removeChild(pasteInput);
         document.removeEventListener('paste', pasteHandler);
-      }
-    }, 1000);
+      };
+      
+      document.addEventListener('paste', pasteHandler);
+      
+      // Cleanup if paste doesn't happen
+      setTimeout(() => {
+        if (document.body.contains(pasteInput)) {
+          document.body.removeChild(pasteInput);
+          document.removeEventListener('paste', pasteHandler);
+        }
+      }, 1000);
+    }
   };
 
   return (
@@ -113,14 +132,12 @@ const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSele
         </div>
       </div>
       <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
-        {!preview && (
-          <button
-            onClick={handlePasteClick}
-            className={actionButtonClasses}
-          >
-            <i className="fas fa-paste"></i> Paste
-          </button>
-        )}
+        <button
+          onClick={handlePasteClick}
+          className={actionButtonClasses}
+        >
+          <i className="fas fa-paste"></i> Paste
+        </button>
         {preview && (
           <>
             {onView && <button onClick={onView} className={actionButtonClasses}><i className="fas fa-expand"></i> View</button>}
