@@ -52,18 +52,60 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, imagePrevi
 
   const handlePaste = async (e: React.ClipboardEvent<HTMLDivElement>) => {
     e.preventDefault();
-    
-    // Check for files in clipboard
-    const items = e.clipboardData.items;
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      if (item.type.indexOf('image') !== -1) {
-        const file = item.getAsFile();
-        if (file) {
-          onImageUpload(file);
-          return;
+    await pasteImageFromClipboard();
+  };
+
+  const pasteImageFromClipboard = async () => {
+    try {
+      // Try to read clipboard items
+      const clipboardItems = await navigator.clipboard.read();
+      
+      for (const clipboardItem of clipboardItems) {
+        for (const type of clipboardItem.types) {
+          if (type.startsWith('image/')) {
+            const blob = await clipboardItem.getType(type);
+            const file = new File([blob], `pasted-image.${type.split('/')[1]}`, { type });
+            onImageUpload(file);
+            return;
+          }
         }
       }
+    } catch (error) {
+      console.error('Failed to paste from clipboard:', error);
+      // Fallback: try using a temporary input element to capture paste event
+      const pasteInput = document.createElement('input');
+      pasteInput.type = 'text';
+      pasteInput.style.position = 'absolute';
+      pasteInput.style.left = '-9999px';
+      document.body.appendChild(pasteInput);
+      pasteInput.focus();
+      
+      const pasteHandler = async (e: ClipboardEvent) => {
+        e.preventDefault();
+        const items = e.clipboardData?.items;
+        if (items) {
+          for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            if (item.type.indexOf('image') !== -1) {
+              const file = item.getAsFile();
+              if (file) {
+                onImageUpload(file);
+              }
+            }
+          }
+        }
+        document.body.removeChild(pasteInput);
+        document.removeEventListener('paste', pasteHandler);
+      };
+      
+      document.addEventListener('paste', pasteHandler);
+      
+      setTimeout(() => {
+        if (document.body.contains(pasteInput)) {
+          document.body.removeChild(pasteInput);
+          document.removeEventListener('paste', pasteHandler);
+        }
+      }, 1000);
     }
   };
 
@@ -91,8 +133,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, imagePrevi
             </div>
           )}
         </div>
-        {imagePreview && (
-          <div className="flex gap-2 mt-2 justify-center">
+        <div className="flex gap-2 mt-2 justify-center">
+          {imagePreview && (
             <button
               onClick={handleCopy}
               className="bg-gray-800/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-purple-600 transition-colors border border-gray-700 flex items-center gap-2"
@@ -107,14 +149,14 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, imagePrevi
                 </>
               )}
             </button>
-            <button
-              onClick={handleClick}
-              className="bg-gray-800/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-purple-600 transition-colors border border-gray-700 flex items-center gap-2"
-            >
-              <i className="fas fa-paste"></i> Paste
-            </button>
-          </div>
-        )}
+          )}
+          <button
+            onClick={pasteImageFromClipboard}
+            className="bg-gray-800/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-purple-600 transition-colors border border-gray-700 flex items-center gap-2"
+          >
+            <i className="fas fa-paste"></i> Paste
+          </button>
+        </div>
       </div>
       <input
         ref={fileInputRef}
