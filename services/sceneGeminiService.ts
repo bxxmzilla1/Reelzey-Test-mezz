@@ -82,7 +82,10 @@ export async function generateScene(
     - The main subject is the person in the provided image.
     - IMPORTANT RULE for smiles: When describing a smile, use subtle terms like "soft smile" or "gentle smile". Avoid exaggerated descriptions like "big smile" or "wide smile". Crucially, whenever you describe any form of smiling, you MUST follow it with the exact phrase "without stretching the face a lot".`;
 
-    if (prompt) {
+    // Special condition for Selfie + Walking
+    if (cameraView === 'Selfie' && prompt && prompt.toLowerCase().includes('walking')) {
+      systemPrompt += `\n- SPECIAL INSTRUCTION: The user's prompt is "${prompt}". Because the camera view is "Selfie", the action of walking must be described as "walking backwards". Do NOT use the phrase "walking forward".`;
+    } else if (prompt) {
       systemPrompt += `\n- Incorporate the following user idea into the scene: "${prompt}"`;
     } else {
       systemPrompt += `\n- Analyze the person in the image and create a scene that fits their appearance and the selected mood.`;
