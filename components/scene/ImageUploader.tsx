@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { UploadIcon } from './icons';
 
 interface ImageUploaderProps {
@@ -8,7 +8,6 @@ interface ImageUploaderProps {
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, imagePreview }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [copied, setCopied] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -20,34 +19,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, imagePrevi
 
   const handleClick = () => {
     fileInputRef.current?.click();
-  };
-
-  const handleCopy = async () => {
-    if (!imagePreview) return;
-    
-    try {
-      // Convert base64 to blob
-      const response = await fetch(imagePreview);
-      const blob = await response.blob();
-      
-      // Copy blob to clipboard
-      await navigator.clipboard.write([
-        new ClipboardItem({ [blob.type]: blob })
-      ]);
-      
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy image:', error);
-      // Fallback: copy base64 string
-      try {
-        await navigator.clipboard.writeText(imagePreview);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch (err) {
-        console.error('Failed to copy image as text:', err);
-      }
-    }
   };
 
   const handlePaste = async (e: React.ClipboardEvent<HTMLDivElement>) => {
@@ -112,51 +83,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, imagePrevi
     }
   };
 
-  const pasteImageFromClipboard = async () => {
-    // Focus the container so it can receive paste events
-    if (containerRef.current) {
-      containerRef.current.focus();
-    }
-    
-    // Try Clipboard API first
-    try {
-      const clipboardItems = await navigator.clipboard.read();
-      for (const clipboardItem of clipboardItems) {
-        for (const type of clipboardItem.types) {
-          const typeLower = type.toLowerCase();
-          // Accept all image types, especially PNG and JPEG
-          if (typeLower.startsWith('image/') || 
-              typeLower === 'image/png' || 
-              typeLower === 'image/jpeg' || 
-              typeLower === 'image/jpg') {
-            const blob = await clipboardItem.getType(type);
-            // Ensure proper file extension and MIME type for PNG and JPEG
-            let fileName = 'pasted-image';
-            let mimeType = type;
-            
-            if (typeLower.includes('png')) {
-              fileName = 'pasted-image.png';
-              mimeType = 'image/png';
-            } else if (typeLower.includes('jpeg') || typeLower.includes('jpg')) {
-              fileName = 'pasted-image.jpg';
-              mimeType = 'image/jpeg';
-            } else {
-              const extension = type.split('/')[1].split(';')[0];
-              fileName = `pasted-image.${extension}`;
-            }
-            
-            const file = new File([blob], fileName, { type: mimeType });
-            onImageUpload(file);
-            return;
-          }
-        }
-      }
-    } catch (error) {
-      // Clipboard API failed, user will need to press Ctrl+V after clicking
-      // The onPaste handler will catch it
-      console.log('Clipboard API not available, please press Ctrl+V after clicking Paste');
-    }
-  };
 
   return (
     <div>
@@ -182,30 +108,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, imagePrevi
               <p className="text-xs text-gray-500">PNG, JPG, WEBP up to 10MB</p>
             </div>
           )}
-        </div>
-        <div className="flex gap-2 mt-2 justify-center">
-          {imagePreview && (
-            <button
-              onClick={handleCopy}
-              className="bg-gray-800/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-purple-600 transition-colors border border-gray-700 flex items-center gap-2"
-            >
-              {copied ? (
-                <>
-                  <i className="fas fa-check text-green-400"></i> Copied
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-copy"></i> Copy
-                </>
-              )}
-            </button>
-          )}
-          <button
-            onClick={pasteImageFromClipboard}
-            className="bg-gray-800/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-purple-600 transition-colors border border-gray-700 flex items-center gap-2"
-          >
-            <i className="fas fa-paste"></i> Paste
-          </button>
         </div>
       </div>
       <input

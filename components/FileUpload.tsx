@@ -15,7 +15,6 @@ interface FileUploadProps {
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSelect, preview, type, children, onView, onDownload, onCopy }) => {
-  const [copied, setCopied] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -87,67 +86,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSele
     }
   };
 
-  const handleCopyClick = async () => {
-    if (!onCopy) return;
-    const success = await onCopy();
-    if (success) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
   const actionButtonClasses = "bg-gray-800/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-purple-600 transition-colors border border-gray-700 flex items-center gap-2";
-
-  const handlePasteClick = async () => {
-    // Focus the container so it can receive paste events
-    const container = document.activeElement?.closest('[tabindex]') as HTMLElement;
-    if (container) {
-      container.focus();
-    }
-    
-    // Try Clipboard API first
-    try {
-      const clipboardItems = await navigator.clipboard.read();
-      for (const clipboardItem of clipboardItems) {
-        for (const type of clipboardItem.types) {
-          const typeLower = type.toLowerCase();
-          // Accept all image types (especially PNG and JPEG) and video types
-          if (typeLower.startsWith('image/') || 
-              typeLower.startsWith('video/') ||
-              typeLower === 'image/png' || 
-              typeLower === 'image/jpeg' || 
-              typeLower === 'image/jpg') {
-            const blob = await clipboardItem.getType(type);
-            // Ensure proper file extension and MIME type for PNG and JPEG
-            let fileName = 'pasted-media';
-            let mimeType = type;
-            
-            if (typeLower.includes('png')) {
-              fileName = 'pasted-image.png';
-              mimeType = 'image/png';
-            } else if (typeLower.includes('jpeg') || typeLower.includes('jpg')) {
-              fileName = 'pasted-image.jpg';
-              mimeType = 'image/jpeg';
-            } else if (typeLower.startsWith('video/')) {
-              const fileExtension = type.split('/')[1].split(';')[0];
-              fileName = `pasted-video.${fileExtension}`;
-            } else {
-              const fileExtension = type.split('/')[1].split(';')[0];
-              fileName = `pasted-media.${fileExtension}`;
-            }
-            
-            const file = new File([blob], fileName, { type: mimeType });
-            onFileSelect(file);
-            return;
-          }
-        }
-      }
-    } catch (error) {
-      // Clipboard API failed, user will need to press Ctrl+V after clicking
-      // The onPaste handler will catch it
-      console.log('Clipboard API not available, please press Ctrl+V after clicking Paste');
-    }
-  };
 
   return (
     <div className="flex flex-col gap-3" onPaste={handlePaste} tabIndex={0}>
@@ -178,22 +117,13 @@ const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSele
           )}
         </div>
       </div>
-      <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
-        <button
-          onClick={handlePasteClick}
-          className={actionButtonClasses}
-        >
-          <i className="fas fa-paste"></i> Paste
-        </button>
-        {preview && (
-          <>
-            {onView && <button onClick={onView} className={actionButtonClasses}><i className="fas fa-expand"></i> View</button>}
-            {onDownload && <button onClick={onDownload} className={actionButtonClasses}><i className="fas fa-download"></i> Download</button>}
-            {onCopy && <button onClick={handleCopyClick} className={actionButtonClasses}>{copied ? <><i className="fas fa-check text-green-400"></i> Copied</> : <><i className="fas fa-copy"></i> Copy</>}</button>}
-            {children}
-          </>
-        )}
-      </div>
+      {preview && (
+        <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
+          {onView && <button onClick={onView} className={actionButtonClasses}><i className="fas fa-expand"></i> View</button>}
+          {onDownload && <button onClick={onDownload} className={actionButtonClasses}><i className="fas fa-download"></i> Download</button>}
+          {children}
+        </div>
+      )}
     </div>
   );
 };
