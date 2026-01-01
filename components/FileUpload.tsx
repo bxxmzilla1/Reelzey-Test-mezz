@@ -24,11 +24,29 @@ const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSele
   };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Check clipboardData.items first (works for browser-copied images)
+    const items = e.clipboardData.items;
+    if (items) {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.indexOf('image') !== -1 || item.type.indexOf('video') !== -1) {
+          const file = item.getAsFile();
+          if (file) {
+            onFileSelect(file);
+            return;
+          }
+        }
+      }
+    }
+    
+    // Fallback: check clipboardData.files
     if (e.clipboardData.files && e.clipboardData.files.length > 0) {
       const file = e.clipboardData.files[0];
       if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
         onFileSelect(file);
-        e.preventDefault();
       }
     }
   };
@@ -45,15 +63,20 @@ const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSele
   const actionButtonClasses = "bg-gray-800/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-purple-600 transition-colors border border-gray-700 flex items-center gap-2";
 
   const handlePasteClick = async () => {
+    // Focus the container so it can receive paste events
+    const container = document.activeElement?.closest('[tabindex]') as HTMLElement;
+    if (container) {
+      container.focus();
+    }
+    
+    // Try Clipboard API first
     try {
-      // Try to read clipboard items using Clipboard API
       const clipboardItems = await navigator.clipboard.read();
-      
       for (const clipboardItem of clipboardItems) {
         for (const type of clipboardItem.types) {
           if (type.startsWith('image/') || type.startsWith('video/')) {
             const blob = await clipboardItem.getType(type);
-            const fileExtension = type.split('/')[1].split(';')[0]; // Handle MIME types like "video/mp4;codecs=..."
+            const fileExtension = type.split('/')[1].split(';')[0];
             const fileName = `pasted-media.${fileExtension}`;
             const file = new File([blob], fileName, { type });
             onFileSelect(file);
@@ -62,48 +85,14 @@ const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSele
         }
       }
     } catch (error) {
-      console.error('Failed to paste from clipboard:', error);
-      // Fallback: try using a temporary input element to capture paste event
-      const pasteInput = document.createElement('input');
-      pasteInput.type = 'text';
-      pasteInput.style.position = 'absolute';
-      pasteInput.style.left = '-9999px';
-      document.body.appendChild(pasteInput);
-      pasteInput.focus();
-      
-      // Listen for paste event
-      const pasteHandler = (e: ClipboardEvent) => {
-        e.preventDefault();
-        const items = e.clipboardData?.items;
-        if (items) {
-          for (let i = 0; i < items.length; i++) {
-            const item = items[i];
-            if (item.type.indexOf('image') !== -1 || item.type.indexOf('video') !== -1) {
-              const file = item.getAsFile();
-              if (file) {
-                onFileSelect(file);
-              }
-            }
-          }
-        }
-        document.body.removeChild(pasteInput);
-        document.removeEventListener('paste', pasteHandler);
-      };
-      
-      document.addEventListener('paste', pasteHandler);
-      
-      // Cleanup if paste doesn't happen
-      setTimeout(() => {
-        if (document.body.contains(pasteInput)) {
-          document.body.removeChild(pasteInput);
-          document.removeEventListener('paste', pasteHandler);
-        }
-      }, 1000);
+      // Clipboard API failed, user will need to press Ctrl+V after clicking
+      // The onPaste handler will catch it
+      console.log('Clipboard API not available, please press Ctrl+V after clicking Paste');
     }
   };
 
   return (
-    <div className="flex flex-col gap-3" onPaste={handlePaste}>
+    <div className="flex flex-col gap-3" onPaste={handlePaste} tabIndex={0}>
       {label && <label className="text-sm font-medium text-gray-400 uppercase tracking-wider">{label}</label>}
       <div className="relative group">
         <input

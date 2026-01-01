@@ -52,14 +52,41 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, imagePrevi
 
   const handlePaste = async (e: React.ClipboardEvent<HTMLDivElement>) => {
     e.preventDefault();
-    await pasteImageFromClipboard();
+    e.stopPropagation();
+    
+    // Check clipboardData.items first (works for browser-copied images)
+    const items = e.clipboardData.items;
+    if (items) {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.indexOf('image') !== -1) {
+          const file = item.getAsFile();
+          if (file) {
+            onImageUpload(file);
+            return;
+          }
+        }
+      }
+    }
+    
+    // Fallback: check clipboardData.files
+    if (e.clipboardData.files && e.clipboardData.files.length > 0) {
+      const file = e.clipboardData.files[0];
+      if (file.type.startsWith('image/')) {
+        onImageUpload(file);
+      }
+    }
   };
 
   const pasteImageFromClipboard = async () => {
+    // Focus the container so it can receive paste events
+    if (containerRef.current) {
+      containerRef.current.focus();
+    }
+    
+    // Try Clipboard API first
     try {
-      // Try to read clipboard items
       const clipboardItems = await navigator.clipboard.read();
-      
       for (const clipboardItem of clipboardItems) {
         for (const type of clipboardItem.types) {
           if (type.startsWith('image/')) {
@@ -71,41 +98,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, imagePrevi
         }
       }
     } catch (error) {
-      console.error('Failed to paste from clipboard:', error);
-      // Fallback: try using a temporary input element to capture paste event
-      const pasteInput = document.createElement('input');
-      pasteInput.type = 'text';
-      pasteInput.style.position = 'absolute';
-      pasteInput.style.left = '-9999px';
-      document.body.appendChild(pasteInput);
-      pasteInput.focus();
-      
-      const pasteHandler = async (e: ClipboardEvent) => {
-        e.preventDefault();
-        const items = e.clipboardData?.items;
-        if (items) {
-          for (let i = 0; i < items.length; i++) {
-            const item = items[i];
-            if (item.type.indexOf('image') !== -1) {
-              const file = item.getAsFile();
-              if (file) {
-                onImageUpload(file);
-              }
-            }
-          }
-        }
-        document.body.removeChild(pasteInput);
-        document.removeEventListener('paste', pasteHandler);
-      };
-      
-      document.addEventListener('paste', pasteHandler);
-      
-      setTimeout(() => {
-        if (document.body.contains(pasteInput)) {
-          document.body.removeChild(pasteInput);
-          document.removeEventListener('paste', pasteHandler);
-        }
-      }, 1000);
+      // Clipboard API failed, user will need to press Ctrl+V after clicking
+      // The onPaste handler will catch it
+      console.log('Clipboard API not available, please press Ctrl+V after clicking Paste');
     }
   };
 
@@ -116,6 +111,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, imagePrevi
         ref={containerRef}
         onPaste={handlePaste}
         className="relative"
+        tabIndex={0}
       >
         <div
           onClick={handleClick}
