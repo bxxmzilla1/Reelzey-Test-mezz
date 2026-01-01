@@ -32,10 +32,30 @@ const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSele
     if (items) {
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
-        if (item.type.indexOf('image') !== -1 || item.type.indexOf('video') !== -1) {
+        const itemType = item.type.toLowerCase();
+        // Accept all image types (especially PNG and JPEG) and video types
+        if (itemType.indexOf('image') !== -1 || 
+            itemType.indexOf('video') !== -1 ||
+            itemType === 'image/png' || 
+            itemType === 'image/jpeg' || 
+            itemType === 'image/jpg' ||
+            itemType.startsWith('image/png') ||
+            itemType.startsWith('image/jpeg') ||
+            itemType.startsWith('image/jpg')) {
           const file = item.getAsFile();
           if (file) {
-            onFileSelect(file);
+            // Ensure proper MIME type for PNG and JPEG images
+            if (itemType.includes('png')) {
+              const blob = new Blob([file], { type: 'image/png' });
+              const pngFile = new File([blob], 'pasted-image.png', { type: 'image/png' });
+              onFileSelect(pngFile);
+            } else if (itemType.includes('jpeg') || itemType.includes('jpg')) {
+              const blob = new Blob([file], { type: 'image/jpeg' });
+              const jpegFile = new File([blob], 'pasted-image.jpg', { type: 'image/jpeg' });
+              onFileSelect(jpegFile);
+            } else {
+              onFileSelect(file);
+            }
             return;
           }
         }
@@ -45,8 +65,24 @@ const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSele
     // Fallback: check clipboardData.files
     if (e.clipboardData.files && e.clipboardData.files.length > 0) {
       const file = e.clipboardData.files[0];
-      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
-        onFileSelect(file);
+      const fileType = file.type.toLowerCase();
+      if (fileType.startsWith('image/') || 
+          fileType.startsWith('video/') ||
+          fileType === 'image/png' || 
+          fileType === 'image/jpeg' || 
+          fileType === 'image/jpg') {
+        // Ensure proper MIME type for PNG and JPEG images
+        if (fileType.includes('png')) {
+          const blob = new Blob([file], { type: 'image/png' });
+          const pngFile = new File([blob], 'pasted-image.png', { type: 'image/png' });
+          onFileSelect(pngFile);
+        } else if (fileType.includes('jpeg') || fileType.includes('jpg')) {
+          const blob = new Blob([file], { type: 'image/jpeg' });
+          const jpegFile = new File([blob], 'pasted-image.jpg', { type: 'image/jpeg' });
+          onFileSelect(jpegFile);
+        } else {
+          onFileSelect(file);
+        }
       }
     }
   };
@@ -74,11 +110,33 @@ const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSele
       const clipboardItems = await navigator.clipboard.read();
       for (const clipboardItem of clipboardItems) {
         for (const type of clipboardItem.types) {
-          if (type.startsWith('image/') || type.startsWith('video/')) {
+          const typeLower = type.toLowerCase();
+          // Accept all image types (especially PNG and JPEG) and video types
+          if (typeLower.startsWith('image/') || 
+              typeLower.startsWith('video/') ||
+              typeLower === 'image/png' || 
+              typeLower === 'image/jpeg' || 
+              typeLower === 'image/jpg') {
             const blob = await clipboardItem.getType(type);
-            const fileExtension = type.split('/')[1].split(';')[0];
-            const fileName = `pasted-media.${fileExtension}`;
-            const file = new File([blob], fileName, { type });
+            // Ensure proper file extension and MIME type for PNG and JPEG
+            let fileName = 'pasted-media';
+            let mimeType = type;
+            
+            if (typeLower.includes('png')) {
+              fileName = 'pasted-image.png';
+              mimeType = 'image/png';
+            } else if (typeLower.includes('jpeg') || typeLower.includes('jpg')) {
+              fileName = 'pasted-image.jpg';
+              mimeType = 'image/jpeg';
+            } else if (typeLower.startsWith('video/')) {
+              const fileExtension = type.split('/')[1].split(';')[0];
+              fileName = `pasted-video.${fileExtension}`;
+            } else {
+              const fileExtension = type.split('/')[1].split(';')[0];
+              fileName = `pasted-media.${fileExtension}`;
+            }
+            
+            const file = new File([blob], fileName, { type: mimeType });
             onFileSelect(file);
             return;
           }

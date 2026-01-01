@@ -59,10 +59,29 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, imagePrevi
     if (items) {
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
-        if (item.type.indexOf('image') !== -1) {
+        const itemType = item.type.toLowerCase();
+        // Accept all image types, especially PNG and JPEG
+        if (itemType.indexOf('image') !== -1 || 
+            itemType === 'image/png' || 
+            itemType === 'image/jpeg' || 
+            itemType === 'image/jpg' ||
+            itemType.startsWith('image/png') ||
+            itemType.startsWith('image/jpeg') ||
+            itemType.startsWith('image/jpg')) {
           const file = item.getAsFile();
           if (file) {
-            onImageUpload(file);
+            // Ensure proper MIME type for PNG and JPEG
+            if (itemType.includes('png')) {
+              const blob = new Blob([file], { type: 'image/png' });
+              const pngFile = new File([blob], 'pasted-image.png', { type: 'image/png' });
+              onImageUpload(pngFile);
+            } else if (itemType.includes('jpeg') || itemType.includes('jpg')) {
+              const blob = new Blob([file], { type: 'image/jpeg' });
+              const jpegFile = new File([blob], 'pasted-image.jpg', { type: 'image/jpeg' });
+              onImageUpload(jpegFile);
+            } else {
+              onImageUpload(file);
+            }
             return;
           }
         }
@@ -72,8 +91,23 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, imagePrevi
     // Fallback: check clipboardData.files
     if (e.clipboardData.files && e.clipboardData.files.length > 0) {
       const file = e.clipboardData.files[0];
-      if (file.type.startsWith('image/')) {
-        onImageUpload(file);
+      const fileType = file.type.toLowerCase();
+      if (fileType.startsWith('image/') || 
+          fileType === 'image/png' || 
+          fileType === 'image/jpeg' || 
+          fileType === 'image/jpg') {
+        // Ensure proper MIME type for PNG and JPEG
+        if (fileType.includes('png')) {
+          const blob = new Blob([file], { type: 'image/png' });
+          const pngFile = new File([blob], 'pasted-image.png', { type: 'image/png' });
+          onImageUpload(pngFile);
+        } else if (fileType.includes('jpeg') || fileType.includes('jpg')) {
+          const blob = new Blob([file], { type: 'image/jpeg' });
+          const jpegFile = new File([blob], 'pasted-image.jpg', { type: 'image/jpeg' });
+          onImageUpload(jpegFile);
+        } else {
+          onImageUpload(file);
+        }
       }
     }
   };
@@ -89,9 +123,29 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, imagePrevi
       const clipboardItems = await navigator.clipboard.read();
       for (const clipboardItem of clipboardItems) {
         for (const type of clipboardItem.types) {
-          if (type.startsWith('image/')) {
+          const typeLower = type.toLowerCase();
+          // Accept all image types, especially PNG and JPEG
+          if (typeLower.startsWith('image/') || 
+              typeLower === 'image/png' || 
+              typeLower === 'image/jpeg' || 
+              typeLower === 'image/jpg') {
             const blob = await clipboardItem.getType(type);
-            const file = new File([blob], `pasted-image.${type.split('/')[1]}`, { type });
+            // Ensure proper file extension and MIME type for PNG and JPEG
+            let fileName = 'pasted-image';
+            let mimeType = type;
+            
+            if (typeLower.includes('png')) {
+              fileName = 'pasted-image.png';
+              mimeType = 'image/png';
+            } else if (typeLower.includes('jpeg') || typeLower.includes('jpg')) {
+              fileName = 'pasted-image.jpg';
+              mimeType = 'image/jpeg';
+            } else {
+              const extension = type.split('/')[1].split(';')[0];
+              fileName = `pasted-image.${extension}`;
+            }
+            
+            const file = new File([blob], fileName, { type: mimeType });
             onImageUpload(file);
             return;
           }
