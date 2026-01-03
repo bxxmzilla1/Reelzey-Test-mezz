@@ -17,7 +17,7 @@ const MirrorMode: React.FC<MirrorModeProps> = ({ onOpenSettings }) => {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [resultData, setResultData] = useState<any>(null);
+  const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
   const [hasApiKey, setHasApiKey] = useState<boolean>(false);
 
   // Check for API key on mount and when it might change
@@ -52,14 +52,14 @@ const MirrorMode: React.FC<MirrorModeProps> = ({ onOpenSettings }) => {
 
   const handleImageSelect = useCallback(async (file: File) => {
     setError(null);
-    setResultData(null);
+    setGeneratedVideoUrl(null);
     const base64 = await convertToBase64(file);
     setImageData({ file, preview: URL.createObjectURL(file), base64 });
   }, []);
 
   const handleVideoSelect = useCallback(async (file: File) => {
     setError(null);
-    setResultData(null);
+    setGeneratedVideoUrl(null);
     const base64 = await convertToBase64(file);
     setVideoData({ file, preview: URL.createObjectURL(file), base64 });
   }, []);
@@ -73,7 +73,7 @@ const MirrorMode: React.FC<MirrorModeProps> = ({ onOpenSettings }) => {
     setLoading(true);
     setError(null);
     setSuccessMessage(null);
-    setResultData(null);
+    setGeneratedVideoUrl(null);
     setLoadingMessage("Submitting task...");
 
     const WAVESPEED_API_KEY = localStorage.getItem('wavespeedApiKey');
@@ -117,56 +117,46 @@ const MirrorMode: React.FC<MirrorModeProps> = ({ onOpenSettings }) => {
       }
 
       setRequestId(newRequestId);
-      setSuccessMessage(`Task submitted successfully! Request ID: ${newRequestId}`);
-      setLoading(false);
-      setLoadingMessage('');
+      
+      // Automatically poll for results
+      let attempts = 0;
+      const maxAttempts = 60;
+      const pollInterval = 5000;
+
+      while (attempts < maxAttempts) {
+        attempts++;
+        setLoadingMessage(`Generating video... Please wait. (Attempt ${attempts} of ${maxAttempts})`);
+
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+
+        const getResponse = await fetch(`https://api.wavespeed.ai/api/v3/predictions/${newRequestId}/result`, {
+          headers: {
+            "Authorization": `Bearer ${WAVESPEED_API_KEY}`
+          }
+        });
+        
+        if (getResponse.status === 202) { continue; }
+        
+        if (!getResponse.ok) {
+          const errorData = await getResponse.json().catch(() => ({ message: getResponse.statusText }));
+          throw new Error(`Failed to fetch video result: ${errorData.message || getResponse.statusText}`);
+        }
+
+        const resultData = await getResponse.json();
+
+        if (resultData.status === 'completed' && resultData.outputs && resultData.outputs.length > 0) {
+          setGeneratedVideoUrl(resultData.outputs[0]);
+          setLoading(false);
+          setLoadingMessage('');
+          return;
+        } else if (resultData.status === 'failed') {
+          throw new Error(`Video generation failed: ${resultData.error || 'Unknown error from API.'}`);
+        }
+      }
+      throw new Error("Video generation timed out. Please try again later.");
+
     } catch (err: any) {
       setError(err.message || "Failed to submit task. Please try again.");
-      setLoading(false);
-      setLoadingMessage('');
-    }
-  };
-
-  const handleQueryResult = async () => {
-    if (!requestId) {
-      setError("Please submit a task first to get a request ID.");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setLoadingMessage("Querying result...");
-
-    const WAVESPEED_API_KEY = localStorage.getItem('wavespeedApiKey');
-
-    if (!WAVESPEED_API_KEY || WAVESPEED_API_KEY.trim() === '') {
-      setError("Wavespeed API key is not configured. Please add it in the Settings menu.");
-      setLoading(false);
-      setHasApiKey(false);
-      return;
-    }
-    
-    setHasApiKey(true);
-
-    try {
-      const getResponse = await fetch(`https://api.wavespeed.ai/api/v3/predictions/${requestId}/result`, {
-        method: 'GET',
-        headers: {
-          "Authorization": `Bearer ${WAVESPEED_API_KEY}`
-        }
-      });
-
-      if (!getResponse.ok) {
-        const errorData = await getResponse.json().catch(() => ({ message: getResponse.statusText }));
-        throw new Error(errorData.message || `API request failed with status ${getResponse.status}`);
-      }
-
-      const result = await getResponse.json();
-      setResultData(result);
-      setLoading(false);
-      setLoadingMessage('');
-    } catch (err: any) {
-      setError(err.message || "Failed to query result. Please try again.");
       setLoading(false);
       setLoadingMessage('');
     }
@@ -182,46 +172,37 @@ const MirrorMode: React.FC<MirrorModeProps> = ({ onOpenSettings }) => {
     setLoadingMessage('');
     setError(null);
     setSuccessMessage(null);
-    setResultData(null);
+    setGeneratedVideoUrl(null);
   };
 
   return (
     <div className="px-4 md:px-8 pb-8 max-w-4xl mx-auto">
-      <div className="flex flex-col gap-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold gradient-text">Mirror Mode</h1>
-          <button
-            onClick={handleReset}
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-xl transition-all flex items-center gap-2"
-          >
-            <i className="fas fa-redo"></i> Reset
-          </button>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center gap-4 p-8 glass rounded-3xl min-h-[50vh]">
+          <svg className="animate-spin h-10 w-10 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p className="text-xl font-semibold">Generating your video...</p>
+          <p className="text-gray-400 text-center">{loadingMessage}<br/>This process can take several minutes. Please don't close this window.</p>
         </div>
+      ) : (
+        <div className="flex flex-col gap-8">
+          {!generatedVideoUrl && (
+            <>
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold gradient-text">Mirror Mode</h1>
+                <button
+                  onClick={handleReset}
+                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-xl transition-all flex items-center gap-2"
+                >
+                  <i className="fas fa-redo"></i> Reset
+                </button>
+              </div>
 
-        {/* API Key Warning */}
-        {!hasApiKey && (
-          <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-400 flex gap-3 items-start">
-            <i className="fas fa-exclamation-triangle mt-1"></i>
-            <div className="flex-1">
-              <p className="font-semibold mb-1">Wavespeed API Key Required</p>
-              <p className="text-sm text-yellow-300/80">
-                Please configure your Wavespeed API key in Settings to use Mirror Mode features.
-                {onOpenSettings && (
-                  <button
-                    onClick={onOpenSettings}
-                    className="ml-2 underline hover:text-yellow-200 transition-colors"
-                  >
-                    Open Settings
-                  </button>
-                )}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Submit Task Section */}
-        <section className="glass p-6 rounded-3xl">
+              {/* Submit Task Section */}
+              <section className="glass p-6 rounded-3xl">
           <h2 className="text-2xl font-semibold mb-6 flex items-center gap-3">
             <i className="fas fa-paper-plane text-purple-400"></i>
             Submit Task
@@ -317,67 +298,6 @@ const MirrorMode: React.FC<MirrorModeProps> = ({ onOpenSettings }) => {
               )}
             </button>
 
-            {/* Request ID Display */}
-            {requestId && (
-              <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl">
-                <p className="text-sm text-gray-400 mb-1">Request ID:</p>
-                <p className="text-purple-400 font-mono font-semibold break-all">{requestId}</p>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Query Result Section */}
-        <section className="glass p-6 rounded-3xl">
-          <h2 className="text-2xl font-semibold mb-6 flex items-center gap-3">
-            <i className="fas fa-search text-purple-400"></i>
-            Query Result
-          </h2>
-
-          <div className="flex flex-col gap-4">
-            {/* Request ID Input */}
-            <div>
-              <label className="block text-sm font-semibold mb-3 text-gray-300">Request ID</label>
-              <input
-                type="text"
-                value={requestId}
-                onChange={(e) => setRequestId(e.target.value)}
-                placeholder="Enter request ID from submitted task"
-                className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300 placeholder-gray-500"
-              />
-            </div>
-
-            {/* Query Button */}
-            <button
-              onClick={handleQueryResult}
-              disabled={loading || !requestId}
-              className="w-full py-4 rounded-xl font-semibold text-lg transition-all flex items-center justify-center gap-3 bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-900/30 neon-glow neon-glow-hover active:scale-[0.98] disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed disabled:neon-glow-0"
-            >
-              {loading && loadingMessage ? (
-                <>
-                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  {loadingMessage}
-                </>
-              ) : (
-                <>
-                  <i className="fas fa-search"></i>
-                  Query Result
-                </>
-              )}
-            </button>
-
-            {/* Result Display */}
-            {resultData && (
-              <div className="p-4 bg-gray-800/50 rounded-xl border border-gray-700">
-                <p className="text-sm font-semibold text-gray-300 mb-2">Result:</p>
-                <pre className="text-xs text-gray-400 overflow-auto max-h-96 p-4 bg-black/40 rounded-lg">
-                  {JSON.stringify(resultData, null, 2)}
-                </pre>
-              </div>
-            )}
           </div>
         </section>
 
@@ -395,7 +315,38 @@ const MirrorMode: React.FC<MirrorModeProps> = ({ onOpenSettings }) => {
             <p>{successMessage}</p>
           </div>
         )}
-      </div>
+            </>
+          )}
+
+          {generatedVideoUrl && (
+            <section className="animate-in fade-in">
+              <h2 className="text-2xl font-semibold tracking-wide mb-4 text-center">Your Video is Ready!</h2>
+              <div className="glass p-6 rounded-3xl">
+                <div className="flex justify-center bg-black/40 rounded-xl p-2 border border-gray-800">
+                  <video 
+                    src={generatedVideoUrl} 
+                    controls 
+                    key={generatedVideoUrl} 
+                    className="w-full max-w-full max-h-[70vh] rounded-lg object-contain" 
+                  />
+                </div>
+                
+                <div className="mt-6 flex flex-col md:flex-row gap-4 md:gap-6 items-center justify-center border-t border-gray-700/50 pt-6">
+                  <a href={generatedVideoUrl} download={`mirror_mode_video.mp4`} className="text-sm font-semibold text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-2 bg-gray-800 px-4 py-2 rounded-lg border border-purple-500/30 hover:border-purple-500/50">
+                    <i className="fas fa-download"></i> Download Video
+                  </a>
+                </div>
+                
+                <div className="flex justify-center mt-6">
+                  <button onClick={handleReset} className="w-full md:w-auto bg-gray-700 hover:bg-gray-600 text-white font-semibold px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95">
+                    <i className="fas fa-redo"></i> Create Another Video
+                  </button>
+                </div>
+              </div>
+            </section>
+          )}
+        </div>
+      )}
     </div>
   );
 };
