@@ -15,6 +15,7 @@ interface FileUploadProps {
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSelect, preview, type, children, onView, onDownload, onCopy }) => {
+  const [copied, setCopied] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -31,30 +32,10 @@ const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSele
     if (items) {
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
-        const itemType = item.type.toLowerCase();
-        // Accept all image types (especially PNG and JPEG) and video types
-        if (itemType.indexOf('image') !== -1 || 
-            itemType.indexOf('video') !== -1 ||
-            itemType === 'image/png' || 
-            itemType === 'image/jpeg' || 
-            itemType === 'image/jpg' ||
-            itemType.startsWith('image/png') ||
-            itemType.startsWith('image/jpeg') ||
-            itemType.startsWith('image/jpg')) {
+        if (item.type.indexOf('image') !== -1 || item.type.indexOf('video') !== -1) {
           const file = item.getAsFile();
           if (file) {
-            // Ensure proper MIME type for PNG and JPEG images
-            if (itemType.includes('png')) {
-              const blob = new Blob([file], { type: 'image/png' });
-              const pngFile = new File([blob], 'pasted-image.png', { type: 'image/png' });
-              onFileSelect(pngFile);
-            } else if (itemType.includes('jpeg') || itemType.includes('jpg')) {
-              const blob = new Blob([file], { type: 'image/jpeg' });
-              const jpegFile = new File([blob], 'pasted-image.jpg', { type: 'image/jpeg' });
-              onFileSelect(jpegFile);
-            } else {
-              onFileSelect(file);
-            }
+            onFileSelect(file);
             return;
           }
         }
@@ -64,29 +45,51 @@ const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSele
     // Fallback: check clipboardData.files
     if (e.clipboardData.files && e.clipboardData.files.length > 0) {
       const file = e.clipboardData.files[0];
-      const fileType = file.type.toLowerCase();
-      if (fileType.startsWith('image/') || 
-          fileType.startsWith('video/') ||
-          fileType === 'image/png' || 
-          fileType === 'image/jpeg' || 
-          fileType === 'image/jpg') {
-        // Ensure proper MIME type for PNG and JPEG images
-        if (fileType.includes('png')) {
-          const blob = new Blob([file], { type: 'image/png' });
-          const pngFile = new File([blob], 'pasted-image.png', { type: 'image/png' });
-          onFileSelect(pngFile);
-        } else if (fileType.includes('jpeg') || fileType.includes('jpg')) {
-          const blob = new Blob([file], { type: 'image/jpeg' });
-          const jpegFile = new File([blob], 'pasted-image.jpg', { type: 'image/jpeg' });
-          onFileSelect(jpegFile);
-        } else {
-          onFileSelect(file);
-        }
+      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+        onFileSelect(file);
       }
     }
   };
 
+  const handleCopyClick = async () => {
+    if (!onCopy) return;
+    const success = await onCopy();
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   const actionButtonClasses = "bg-gray-800/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-purple-600 transition-colors border border-gray-700 flex items-center gap-2";
+
+  const handlePasteClick = async () => {
+    // Focus the container so it can receive paste events
+    const container = document.activeElement?.closest('[tabindex]') as HTMLElement;
+    if (container) {
+      container.focus();
+    }
+    
+    // Try Clipboard API first
+    try {
+      const clipboardItems = await navigator.clipboard.read();
+      for (const clipboardItem of clipboardItems) {
+        for (const type of clipboardItem.types) {
+          if (type.startsWith('image/') || type.startsWith('video/')) {
+            const blob = await clipboardItem.getType(type);
+            const fileExtension = type.split('/')[1].split(';')[0];
+            const fileName = `pasted-media.${fileExtension}`;
+            const file = new File([blob], fileName, { type });
+            onFileSelect(file);
+            return;
+          }
+        }
+      }
+    } catch (error) {
+      // Clipboard API failed, user will need to press Ctrl+V after clicking
+      // The onPaste handler will catch it
+      console.log('Clipboard API not available, please press Ctrl+V after clicking Paste');
+    }
+  };
 
   return (
     <div className="flex flex-col gap-3" onPaste={handlePaste} tabIndex={0}>
@@ -117,13 +120,22 @@ const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSele
           )}
         </div>
       </div>
-      {preview && (
-        <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
-          {onView && <button onClick={onView} className={actionButtonClasses}><i className="fas fa-expand"></i> View</button>}
-          {onDownload && <button onClick={onDownload} className={actionButtonClasses}><i className="fas fa-download"></i> Download</button>}
-          {children}
-        </div>
-      )}
+      <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
+        <button
+          onClick={handlePasteClick}
+          className={actionButtonClasses}
+        >
+          <i className="fas fa-paste"></i> Paste
+        </button>
+        {preview && (
+          <>
+            {onView && <button onClick={onView} className={actionButtonClasses}><i className="fas fa-expand"></i> View</button>}
+            {onDownload && <button onClick={onDownload} className={actionButtonClasses}><i className="fas fa-download"></i> Download</button>}
+            {onCopy && <button onClick={handleCopyClick} className={actionButtonClasses}>{copied ? <><i className="fas fa-check text-green-400"></i> Copied</> : <><i className="fas fa-copy"></i> Copy</>}</button>}
+            {children}
+          </>
+        )}
+      </div>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FilmIcon } from './icons';
 
 interface SceneDisplayProps {
@@ -18,9 +18,41 @@ const LoadingSkeleton = () => (
 
 
 const SceneDisplay: React.FC<SceneDisplayProps> = ({ scene, isLoading }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    if (!scene) return;
+    
+    try {
+      await navigator.clipboard.writeText(scene);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy scene:', error);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
-      <h2 className="text-xl font-bold text-gray-200 mb-4">Generated Scene</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold text-gray-200">Generated Scene</h2>
+        {scene && !isLoading && (
+          <button
+            onClick={handleCopy}
+            className="bg-gray-800/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-purple-600 transition-colors border border-gray-700 flex items-center gap-2"
+          >
+            {copied ? (
+              <>
+                <i className="fas fa-check text-green-400"></i> Copied
+              </>
+            ) : (
+              <>
+                <i className="fas fa-copy"></i> Copy
+              </>
+            )}
+          </button>
+        )}
+      </div>
       <div className="flex-grow bg-gray-900/50 p-4 rounded-lg min-h-[300px] lg:min-h-0 overflow-y-auto">
         {isLoading ? (
           <LoadingSkeleton />

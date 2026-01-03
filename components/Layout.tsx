@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Tabs from './Sidebar';
+import SidebarMenu from './SidebarMenu';
 import App from '../App';
 import VideoCreator from './VideoCreator';
 import SettingsModal from './SettingsModal';
@@ -8,6 +9,7 @@ import ScriptCreator from './ScriptCreator';
 import HistorySidebar from './HistorySidebar';
 
 const Layout: React.FC = () => {
+  const [activeMenu, setActiveMenu] = useState('directorMode');
   const [activeView, setActiveView] = useState('stageCreator');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
@@ -96,9 +98,9 @@ const Layout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-black">
-      <header className="w-full px-2 sm:px-6 lg:px-8 bg-black backdrop-blur-sm border-b border-purple-500/20">
+      <header className="w-full px-2 sm:px-6 lg:px-8 bg-black backdrop-blur-sm border-b border-purple-500/20 fixed top-0 left-0 right-0 z-50">
         <div className="flex items-center justify-between h-16">
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveView('stageCreator'); }} className="flex items-center">
+          <a href="#" onClick={(e) => { e.preventDefault(); setActiveMenu('directorMode'); setActiveView('stageCreator'); }} className="flex items-center">
             <span className="self-center text-xl font-semibold whitespace-nowrap gradient-text">Reelzey</span>
           </a>
           <div className="flex items-center gap-2 sm:gap-4">
@@ -140,26 +142,43 @@ const Layout: React.FC = () => {
         />
       )}
 
-      <Tabs 
-        activeView={activeView} 
-        onViewChange={setActiveView} 
+      {/* Sidebar Menu - Left on desktop, Footer on mobile */}
+      <SidebarMenu 
+        activeMenu={activeMenu} 
+        onMenuChange={setActiveMenu} 
       />
 
-      <main>
-        <div style={{ display: activeView === 'stageCreator' ? 'block' : 'none' }}>
-          <App />
-        </div>
-        <div style={{ display: activeView === 'scriptCreator' ? 'block' : 'none' }}>
-          <ScriptCreator />
-        </div>
-        <div style={{ display: activeView === 'videoCreator' ? 'block' : 'none' }}>
-          <VideoCreator 
-            selectedHistoryVideoUrl={selectedHistoryVideoUrl}
-            clearSelectedHistoryVideoUrl={() => setSelectedHistoryVideoUrl(null)}
-            onPulseHistoryButton={handlePulseHistoryButton}
+      {/* Main Content Area - Adjusted for sidebar/footer */}
+      <div className={`pt-16 ${activeMenu === 'directorMode' ? 'md:pl-64' : ''} ${activeMenu === 'directorMode' ? 'pb-24 md:pb-0' : ''}`}>
+        {/* Show tabs only when Director Mode is active */}
+        {activeMenu === 'directorMode' && (
+          <Tabs 
+            activeView={activeView} 
+            onViewChange={setActiveView}
+            showIcons={true}
           />
-        </div>
-      </main>
+        )}
+
+        <main>
+          {activeMenu === 'directorMode' && (
+            <>
+              <div style={{ display: activeView === 'stageCreator' ? 'block' : 'none' }}>
+                <App />
+              </div>
+              <div style={{ display: activeView === 'scriptCreator' ? 'block' : 'none' }}>
+                <ScriptCreator />
+              </div>
+              <div style={{ display: activeView === 'videoCreator' ? 'block' : 'none' }}>
+                <VideoCreator 
+                  selectedHistoryVideoUrl={selectedHistoryVideoUrl}
+                  clearSelectedHistoryVideoUrl={() => setSelectedHistoryVideoUrl(null)}
+                  onPulseHistoryButton={handlePulseHistoryButton}
+                />
+              </div>
+            </>
+          )}
+        </main>
+      </div>
     </div>
   );
 };

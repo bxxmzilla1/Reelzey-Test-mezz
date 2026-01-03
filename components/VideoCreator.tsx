@@ -171,7 +171,22 @@ const VideoCreator: React.FC<VideoCreatorProps> = ({ selectedHistoryVideoUrl, cl
                                     </div>
                                     <div className="flex flex-col gap-6">
                                         <div className="glass p-6 rounded-3xl">
-                                            <label className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3 block">2. Write a Prompt</label>
+                                            <div className="flex items-center justify-between mb-3">
+                                                <label className="text-sm font-medium text-gray-400 uppercase tracking-wider">2. Write a Prompt</label>
+                                                <button
+                                                    onClick={async () => {
+                                                        try {
+                                                            const text = await navigator.clipboard.readText();
+                                                            setPrompt(text);
+                                                        } catch (error) {
+                                                            console.error('Failed to paste:', error);
+                                                        }
+                                                    }}
+                                                    className="bg-gray-800/80 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-purple-600 transition-colors border border-gray-700 flex items-center gap-2"
+                                                >
+                                                    <i className="fas fa-paste"></i> Paste
+                                                </button>
+                                            </div>
                                             <textarea
                                                 className="w-full h-40 bg-black/40 rounded-xl p-4 border border-gray-800 focus:ring-2 focus:ring-fuchsia-500 focus:border-fuchsia-500 transition-colors text-gray-300 placeholder-gray-500"
                                                 placeholder="e.g., A golden retriever running in a sunny field..."
