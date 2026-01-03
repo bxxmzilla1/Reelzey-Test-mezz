@@ -6,9 +6,11 @@ import FileUpload from './FileUpload';
 interface MirrorModeProps {
   onOpenSettings?: () => void;
   onPulseHistoryButton?: () => void;
+  selectedHistoryVideoUrl?: string | null;
+  clearSelectedHistoryVideoUrl?: () => void;
 }
 
-const MirrorMode: React.FC<MirrorModeProps> = ({ onOpenSettings, onPulseHistoryButton }) => {
+const MirrorMode: React.FC<MirrorModeProps> = ({ onOpenSettings, onPulseHistoryButton, selectedHistoryVideoUrl, clearSelectedHistoryVideoUrl }) => {
   const [imageData, setImageData] = useState<FileData | null>(null);
   const [videoData, setVideoData] = useState<FileData | null>(null);
   const [characterOrientation, setCharacterOrientation] = useState<'video' | 'image'>('video');
@@ -19,6 +21,7 @@ const MirrorMode: React.FC<MirrorModeProps> = ({ onOpenSettings, onPulseHistoryB
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
+  const [isFromHistory, setIsFromHistory] = useState<boolean>(false);
   const [hasApiKey, setHasApiKey] = useState<boolean>(false);
 
   // Check for API key on mount and when it might change
@@ -41,6 +44,18 @@ const MirrorMode: React.FC<MirrorModeProps> = ({ onOpenSettings, onPulseHistoryB
       clearInterval(interval);
     };
   }, []);
+
+  // Handle video selection from history
+  useEffect(() => {
+    if (selectedHistoryVideoUrl) {
+      handleReset();
+      setGeneratedVideoUrl(selectedHistoryVideoUrl);
+      setIsFromHistory(true);
+      if (clearSelectedHistoryVideoUrl) {
+        clearSelectedHistoryVideoUrl();
+      }
+    }
+  }, [selectedHistoryVideoUrl, clearSelectedHistoryVideoUrl]);
 
   const convertToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -155,6 +170,7 @@ const MirrorMode: React.FC<MirrorModeProps> = ({ onOpenSettings, onPulseHistoryB
 
         if (resultData.status === 'completed' && resultData.outputs && resultData.outputs.length > 0) {
           setGeneratedVideoUrl(resultData.outputs[0]);
+          setIsFromHistory(false);
           setLoading(false);
           setLoadingMessage('');
           return;
@@ -182,6 +198,7 @@ const MirrorMode: React.FC<MirrorModeProps> = ({ onOpenSettings, onPulseHistoryB
     setError(null);
     setSuccessMessage(null);
     setGeneratedVideoUrl(null);
+    setIsFromHistory(false);
   };
 
   return (
@@ -197,18 +214,49 @@ const MirrorMode: React.FC<MirrorModeProps> = ({ onOpenSettings, onPulseHistoryB
         </div>
       ) : (
         <div className="flex flex-col gap-8">
-          {!generatedVideoUrl && (
-            <>
-              {/* Header */}
-              <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold gradient-text">Mirror Mode</h1>
-                <button
-                  onClick={handleReset}
-                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-xl transition-all flex items-center gap-2"
-                >
-                  <i className="fas fa-redo"></i> Reset
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold gradient-text">Mirror Mode</h1>
+            <button
+              onClick={handleReset}
+              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-xl transition-all flex items-center gap-2"
+            >
+              <i className="fas fa-redo"></i> Reset
+            </button>
+          </div>
+
+          {/* Generated Preview Card - Only shows when video is selected from history */}
+          {generatedVideoUrl && isFromHistory && (
+            <section className="glass p-6 rounded-3xl animate-in fade-in">
+              <h2 className="text-2xl font-semibold mb-6 flex items-center gap-3">
+                <i className="fas fa-play-circle text-purple-400"></i>
+                Generated Preview
+              </h2>
+              <div className="flex justify-center bg-black/40 rounded-xl p-2 border border-gray-800">
+                <video 
+                  src={generatedVideoUrl} 
+                  controls 
+                  key={generatedVideoUrl} 
+                  className="w-full max-w-full max-h-[70vh] rounded-lg object-contain" 
+                />
+              </div>
+              
+              <div className="mt-6 flex flex-col md:flex-row gap-4 md:gap-6 items-center justify-center border-t border-gray-700/50 pt-6">
+                <a href={generatedVideoUrl} download={`mirror_mode_preview.mp4`} className="text-sm font-semibold text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-2 bg-gray-800 px-4 py-2 rounded-lg border border-purple-500/30 hover:border-purple-500/50">
+                  <i className="fas fa-download"></i> Download Video
+                </a>
+              </div>
+              
+              <div className="flex justify-center mt-6">
+                <button onClick={handleReset} className="w-full md:w-auto bg-gray-700 hover:bg-gray-600 text-white font-semibold px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95">
+                  <i className="fas fa-times"></i> Close Preview
                 </button>
               </div>
+            </section>
+          )}
+
+          {!generatedVideoUrl && (
+            <>
 
               {/* Submit Task Section */}
               <section className="glass p-6 rounded-3xl">
@@ -327,7 +375,7 @@ const MirrorMode: React.FC<MirrorModeProps> = ({ onOpenSettings, onPulseHistoryB
             </>
           )}
 
-          {generatedVideoUrl && (
+          {generatedVideoUrl && !isFromHistory && (
             <section className="animate-in fade-in">
               <h2 className="text-2xl font-semibold tracking-wide mb-4 text-center">Your Video is Ready!</h2>
               <div className="glass p-6 rounded-3xl">

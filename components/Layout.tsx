@@ -86,7 +86,13 @@ const Layout: React.FC = () => {
 
   const handleSelectHistoryVideo = (url: string) => {
     setSelectedHistoryVideoUrl(url);
-    setActiveView('videoCreator');
+    // Route to appropriate view based on active menu
+    if (activeMenu === 'mirrorMode') {
+      // Stay in Mirror Mode, video will be shown in preview card
+    } else {
+      // Default to Video Creator in Director Mode
+      setActiveView('videoCreator');
+    }
     setIsHistoryVisible(false);
   };
 
@@ -182,6 +188,8 @@ const Layout: React.FC = () => {
             <MirrorMode 
               onOpenSettings={() => setIsSettingsOpen(true)}
               onPulseHistoryButton={handlePulseHistoryButton}
+              selectedHistoryVideoUrl={selectedHistoryVideoUrl}
+              clearSelectedHistoryVideoUrl={() => setSelectedHistoryVideoUrl(null)}
             />
           )}
         </main>
