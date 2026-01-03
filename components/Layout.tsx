@@ -7,6 +7,7 @@ import VideoCreator from './VideoCreator';
 import SettingsModal from './SettingsModal';
 import ScriptCreator from './ScriptCreator';
 import HistorySidebar from './HistorySidebar';
+import MirrorMode from './MirrorMode';
 
 const Layout: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState('directorMode');
@@ -178,9 +179,7 @@ const Layout: React.FC = () => {
             </>
           )}
           {activeMenu === 'mirrorMode' && (
-            <div className="px-4 md:px-8 pb-8 max-w-4xl mx-auto">
-              {/* Mirror Mode content - blank for now */}
-            </div>
+            <MirrorMode onOpenSettings={() => setIsSettingsOpen(true)} />
           )}
         </main>
       </div>
