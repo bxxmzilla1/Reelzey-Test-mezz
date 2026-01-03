@@ -5,9 +5,10 @@ import FileUpload from './FileUpload';
 
 interface MirrorModeProps {
   onOpenSettings?: () => void;
+  onPulseHistoryButton?: () => void;
 }
 
-const MirrorMode: React.FC<MirrorModeProps> = ({ onOpenSettings }) => {
+const MirrorMode: React.FC<MirrorModeProps> = ({ onOpenSettings, onPulseHistoryButton }) => {
   const [imageData, setImageData] = useState<FileData | null>(null);
   const [videoData, setVideoData] = useState<FileData | null>(null);
   const [characterOrientation, setCharacterOrientation] = useState<'video' | 'image'>('video');
@@ -113,7 +114,15 @@ const MirrorMode: React.FC<MirrorModeProps> = ({ onOpenSettings }) => {
       const newRequestId = prediction.id || prediction.requestId;
 
       if (!newRequestId) {
-        throw new Error("No request ID returned from API.");
+        // Instead of error, show success message and pulse history button
+        setLoading(false);
+        setLoadingMessage('');
+        setSuccessMessage("Your video is now processing and placed in the Generation History Section");
+        // Pulse history button
+        if (onPulseHistoryButton) {
+          onPulseHistoryButton();
+        }
+        return;
       }
 
       setRequestId(newRequestId);

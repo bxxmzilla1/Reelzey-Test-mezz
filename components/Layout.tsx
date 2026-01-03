@@ -179,7 +179,10 @@ const Layout: React.FC = () => {
             </>
           )}
           {activeMenu === 'mirrorMode' && (
-            <MirrorMode onOpenSettings={() => setIsSettingsOpen(true)} />
+            <MirrorMode 
+              onOpenSettings={() => setIsSettingsOpen(true)}
+              onPulseHistoryButton={handlePulseHistoryButton}
+            />
           )}
         </main>
       </div>
