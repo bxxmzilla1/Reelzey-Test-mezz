@@ -9,6 +9,7 @@ interface SidebarMenuProps {
 const SidebarMenu: React.FC<SidebarMenuProps> = ({ activeMenu, onMenuChange }) => {
   const menuItems = [
     { id: 'directorMode', name: 'Director Mode', icon: 'fa-video' },
+    { id: 'referenceMode', name: 'Reference Mode', icon: 'fa-image' },
   ];
 
   const handleClick = (e: React.MouseEvent, menuId: string) => {

@@ -149,7 +149,7 @@ const Layout: React.FC = () => {
       />
 
       {/* Main Content Area - Adjusted for sidebar/footer */}
-      <div className={`pt-16 ${activeMenu === 'directorMode' ? 'md:pl-64' : ''} ${activeMenu === 'directorMode' ? 'pb-24 md:pb-0' : ''}`}>
+      <div className={`pt-16 ${(activeMenu === 'directorMode' || activeMenu === 'referenceMode') ? 'md:pl-64' : ''} ${(activeMenu === 'directorMode' || activeMenu === 'referenceMode') ? 'pb-24 md:pb-0' : ''}`}>
         {/* Show tabs only when Director Mode is active */}
         {activeMenu === 'directorMode' && (
           <Tabs 
@@ -176,6 +176,11 @@ const Layout: React.FC = () => {
                 />
               </div>
             </>
+          )}
+          {activeMenu === 'referenceMode' && (
+            <div className="px-4 md:px-8 pb-8 max-w-4xl mx-auto">
+              {/* Reference Mode content - blank for now */}
+            </div>
           )}
         </main>
       </div>
