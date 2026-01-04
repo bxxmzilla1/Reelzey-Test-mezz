@@ -11,7 +11,7 @@ import MirrorMode from './MirrorMode';
 
 const Layout: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState('directorMode');
-  const [activeView, setActiveView] = useState('stageCreator');
+  const [activeView, setActiveView] = useState('scriptCreator');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
   const [selectedHistoryVideoUrl, setSelectedHistoryVideoUrl] = useState<string | null>(null);
@@ -107,7 +107,7 @@ const Layout: React.FC = () => {
     <div className="min-h-screen bg-black">
       <header className="w-full px-2 sm:px-6 lg:px-8 bg-black backdrop-blur-sm border-b border-purple-500/20 fixed top-0 left-0 right-0 z-50">
         <div className="flex items-center justify-between h-16">
-          <a href="#" onClick={(e) => { e.preventDefault(); setActiveMenu('directorMode'); setActiveView('stageCreator'); }} className="flex items-center">
+          <a href="#" onClick={(e) => { e.preventDefault(); setActiveMenu('directorMode'); setActiveView('scriptCreator'); }} className="flex items-center">
             <span className="self-center text-xl font-semibold whitespace-nowrap gradient-text">Reelzey</span>
           </a>
           <div className="flex items-center gap-2 sm:gap-4">
@@ -175,9 +175,6 @@ const Layout: React.FC = () => {
         <main>
           {activeMenu === 'directorMode' && (
             <>
-              <div style={{ display: activeView === 'stageCreator' ? 'block' : 'none' }}>
-                <App />
-              </div>
               <div style={{ display: activeView === 'scriptCreator' ? 'block' : 'none' }}>
                 <ScriptCreator />
               </div>

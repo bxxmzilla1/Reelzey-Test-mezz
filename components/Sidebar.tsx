@@ -18,7 +18,6 @@ const Tabs: React.FC<TabsProps> = ({ activeView, onViewChange, showIcons = false
   };
 
   const views = [
-    { id: 'stageCreator', name: 'Stage', icon: 'fa-theater-masks' },
     { id: 'scriptCreator', name: 'Script', icon: 'fa-scroll' },
     { id: 'videoCreator', name: 'Video', icon: 'fa-film' },
   ];
