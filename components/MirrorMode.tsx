@@ -303,6 +303,7 @@ const MirrorMode: React.FC<MirrorModeProps> = ({ onOpenSettings, onPulseHistoryB
                 onFileSelect={handleImageSelect}
                 preview={imageData?.preview || null}
                 type="image"
+                showPasteButton={false}
               />
             </div>
 
@@ -316,6 +317,7 @@ const MirrorMode: React.FC<MirrorModeProps> = ({ onOpenSettings, onPulseHistoryB
                 onFileSelect={handleVideoSelect}
                 preview={videoData?.preview || null}
                 type="video"
+                showPasteButton={false}
               />
             </div>
 

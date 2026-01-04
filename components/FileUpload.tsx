@@ -12,9 +12,10 @@ interface FileUploadProps {
   onView?: () => void;
   onDownload?: () => void;
   onCopy?: () => Promise<boolean>;
+  showPasteButton?: boolean;
 }
 
-const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSelect, preview, type, children, onView, onDownload, onCopy }) => {
+const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSelect, preview, type, children, onView, onDownload, onCopy, showPasteButton = true }) => {
   const [copied, setCopied] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,12 +122,14 @@ const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSele
         </div>
       </div>
       <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
-        <button
-          onClick={handlePasteClick}
-          className={actionButtonClasses}
-        >
-          <i className="fas fa-paste"></i> Paste
-        </button>
+        {showPasteButton && (
+          <button
+            onClick={handlePasteClick}
+            className={actionButtonClasses}
+          >
+            <i className="fas fa-paste"></i> Paste
+          </button>
+        )}
         {preview && (
           <>
             {onView && <button onClick={onView} className={actionButtonClasses}><i className="fas fa-expand"></i> View</button>}
