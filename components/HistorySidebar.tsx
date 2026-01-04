@@ -37,7 +37,9 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
                 throw new Error(errorData.message || `Failed to fetch history with status ${response.status}`);
             }
             const result = await response.json();
-            const videoPredictions = result.data.items.filter((p: Prediction) => p.model && p.model.includes('kling-video'));
+            const videoPredictions = result.data.items.filter((p: Prediction) => 
+                p.model && (p.model.includes('kling-video') || p.model.includes('motion-control'))
+            );
             setPredictions(videoPredictions);
         } catch (err: any) {
             setError(err.message || "An unknown error occurred while fetching history.");
