@@ -171,10 +171,10 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
 
     return (
         <div 
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 animate-in fade-in duration-300"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] animate-in fade-in duration-300"
             onClick={handleBackdropClick}
         >
-            <div className="fixed top-0 right-0 h-full w-full md:w-96 bg-gray-900/50 backdrop-blur-lg animate-in slide-in-from-right-full duration-300" onClick={(e) => e.stopPropagation()}>
+            <div className="fixed top-0 right-0 h-full w-full md:w-96 bg-gray-900/50 backdrop-blur-lg animate-in slide-in-from-right-full duration-300 z-[60]" onClick={(e) => e.stopPropagation()}>
                 <div className="flex flex-col h-full glass border-l border-purple-500/20">
                 <div className="flex items-center justify-between p-4 border-b border-gray-800">
                     <h2 className="text-xl font-semibold">Generation History</h2>
@@ -329,7 +329,7 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
             {/* Video Preview Popup */}
             {hoveredVideoUrl && hoverPosition && (
                 <div 
-                    className="fixed z-50 pointer-events-none animate-in fade-in duration-200"
+                    className="fixed z-[70] pointer-events-none animate-in fade-in duration-200"
                     style={{
                         left: `${hoverPosition.x}px`,
                         top: `${hoverPosition.y}px`,
