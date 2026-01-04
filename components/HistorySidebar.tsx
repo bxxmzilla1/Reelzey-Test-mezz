@@ -182,12 +182,13 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
                         <button 
                             onClick={fetchHistory} 
                             disabled={isLoading}
-                            className={`text-gray-500 hover:text-purple-400 transition-colors p-2 rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed ${isLoading ? 'animate-spin' : ''}`}
+                            className={`flex items-center gap-2 px-3 py-2 text-sm font-semibold text-gray-400 hover:text-purple-400 transition-colors rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed ${isLoading ? 'animate-spin' : ''}`}
                             title="Refresh History"
                         >
-                            <i className="fas fa-sync-alt text-lg"></i>
+                            <i className={`fas fa-sync-alt ${isLoading ? 'animate-spin' : ''}`}></i>
+                            <span>Refresh</span>
                         </button>
-                        <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
+                        <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors p-2 rounded-lg hover:bg-gray-800">
                             <i className="fas fa-times text-xl"></i>
                         </button>
                     </div>

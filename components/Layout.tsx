@@ -157,6 +157,12 @@ const Layout: React.FC = () => {
 
       {/* Main Content Area - Adjusted for sidebar/footer */}
       <div className={`pt-16 ${(activeMenu === 'directorMode' || activeMenu === 'mirrorMode') ? 'md:pl-64' : ''} ${(activeMenu === 'directorMode' || activeMenu === 'mirrorMode') ? 'pb-24 md:pb-0' : ''}`}>
+        {/* Director Mode Title */}
+        {activeMenu === 'directorMode' && (
+          <div className="px-4 md:px-8 pt-8 pb-4">
+            <h1 className="text-3xl font-bold gradient-text">Director Mode</h1>
+          </div>
+        )}
         {/* Show tabs only when Director Mode is active */}
         {activeMenu === 'directorMode' && (
           <Tabs 
