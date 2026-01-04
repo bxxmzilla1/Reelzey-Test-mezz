@@ -228,7 +228,7 @@ const App: React.FC = () => {
       <RemovePeopleModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} imageSrc={imageForEditing && sourceImageData ? `data:${sourceImageData.file.type};base64,${imageForEditing}` : ''} onApply={handleRemovePeople} onConfirmAndSetBackground={handleConfirmAndUseAsBackground} isProcessing={isEditingImage} />
       <FrameSelectorModal isOpen={!!videoForFrameSelection} videoFile={videoForFrameSelection} onClose={() => setVideoForFrameSelection(null)} onFrameSelect={handleFrameSelected} />
       
-      <main className="flex flex-col gap-12">
+      <main className="flex flex-col gap-12 pt-8">
         {/* Step 1: Source Media */}
         <section className={`transition-opacity duration-500 ${workflowStep > 1 ? 'opacity-50' : 'opacity-100'}`}>
           <StepHeading number={1} title="Upload Source Media" />
