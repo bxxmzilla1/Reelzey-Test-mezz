@@ -20,6 +20,7 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ activeMenu, onMenuChange }) =
     { id: 'directorMode', name: 'Director Mode', icon: 'fa-video', iconType: 'fa' as const },
     { id: 'mirrorMode', name: 'Mirror Mode', icon: 'mirror', iconType: 'svg' as const },
     { id: 'voiceCloner', name: 'Voice Cloner', icon: 'fa-microphone', iconType: 'fa' as const },
+    { id: 'textToSpeech', name: 'Text To Speech', icon: 'fa-volume-up', iconType: 'fa' as const },
   ];
 
   const handleClick = (e: React.MouseEvent, menuId: string) => {
