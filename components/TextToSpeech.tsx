@@ -5,9 +5,10 @@ interface TextToSpeechProps {
   onOpenSettings?: () => void;
 }
 
-interface Voice {
-  voice_id: string;
+interface VoiceActor {
   name: string;
+  voiceId: string;
+  createdAt?: string;
 }
 
 const TextToSpeech: React.FC<TextToSpeechProps> = ({ onOpenSettings }) => {
@@ -19,8 +20,7 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({ onOpenSettings }) => {
   const [error, setError] = useState<string | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [hasApiKey, setHasApiKey] = useState<boolean>(false);
-  const [clonedVoices, setClonedVoices] = useState<Voice[]>([]);
-  const [loadingVoices, setLoadingVoices] = useState(false);
+  const [voiceActors, setVoiceActors] = useState<VoiceActor[]>([]);
 
   useEffect(() => {
     const checkApiKey = () => {
@@ -32,77 +32,49 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({ onOpenSettings }) => {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch cloned voices on mount and when API key changes
+  // Load voice actors from localStorage
   useEffect(() => {
-    const fetchClonedVoices = async () => {
-      const apiKey = localStorage.getItem('elevenlabsApiKey');
-      if (!apiKey || apiKey.trim() === '') {
-        setClonedVoices([]);
-        return;
-      }
-
-      setLoadingVoices(true);
+    const loadVoiceActors = () => {
       try {
-        const elevenlabs = new ElevenLabsClient({
-          apiKey: apiKey.trim(),
-        });
-
-        // Fetch all voices
-        const voicesResponse = await elevenlabs.voices.getAll();
-        
-        // Debug: Log the response to see its structure
-        console.log('Voices API Response:', voicesResponse);
-        
-        // Handle different response structures
-        // The response might be an array directly or have a 'voices' property
-        let allVoices: any[] = [];
-        if (Array.isArray(voicesResponse)) {
-          allVoices = voicesResponse;
-        } else if (voicesResponse && typeof voicesResponse === 'object') {
-          allVoices = voicesResponse.voices || voicesResponse.data || [];
+        const stored = localStorage.getItem('voiceActors');
+        if (stored) {
+          const actors = JSON.parse(stored);
+          setVoiceActors(Array.isArray(actors) ? actors : []);
+        } else {
+          setVoiceActors([]);
         }
-        
-        console.log('All voices:', allVoices);
-        
-        // Filter for cloned voices only (category === 'cloned')
-        // This excludes premade, professional, and other default voices
-        // Also filter out voices without valid voice_id
-        const cloned = allVoices.filter((voice: any) => {
-          // Check for cloned category or custom voices
-          const isCloned = voice.category === 'cloned' || 
-                          voice.category === 'custom' ||
-                          (voice.category !== 'premade' && voice.category !== 'professional' && voice.category !== 'default');
-          
-          // Ensure voice_id exists and is valid
-          const hasValidId = voice.voice_id && typeof voice.voice_id === 'string' && voice.voice_id.trim() !== '';
-          
-          return isCloned && hasValidId;
-        });
-
-        console.log('Cloned voices:', cloned);
-
-        const mappedVoices = cloned.map((voice: any) => {
-          const voiceId = (voice.voice_id || voice.id || '').toString().trim();
-          const voiceName = voice.name || voice.voice_name || voiceId;
-          
-          return {
-            voice_id: voiceId,
-            name: voiceName,
-          };
-        }).filter((voice: Voice) => voice.voice_id && voice.voice_id.length > 0);
-
-        console.log('Mapped cloned voices:', mappedVoices);
-        setClonedVoices(mappedVoices);
-      } catch (err: any) {
-        console.error('Failed to fetch cloned voices:', err);
-        setClonedVoices([]);
-      } finally {
-        setLoadingVoices(false);
+      } catch (error) {
+        console.error('Error loading voice actors:', error);
+        setVoiceActors([]);
       }
     };
 
-    fetchClonedVoices();
-  }, [hasApiKey]);
+    loadVoiceActors();
+    
+    // Listen for custom event (when voice is created in Voice Cloner)
+    const handleVoiceActorAdded = () => {
+      loadVoiceActors();
+    };
+    
+    // Listen for storage changes (for cross-tab updates)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'voiceActors') {
+        loadVoiceActors();
+      }
+    };
+    
+    window.addEventListener('voiceActorAdded', handleVoiceActorAdded);
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also check periodically for changes (fallback)
+    const interval = setInterval(loadVoiceActors, 1000);
+    
+    return () => {
+      window.removeEventListener('voiceActorAdded', handleVoiceActorAdded);
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   const getApiKey = (): string => {
     const apiKey = localStorage.getItem('elevenlabsApiKey');
@@ -250,34 +222,26 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({ onOpenSettings }) => {
                 {/* Voice ID Dropdown */}
                 <div>
                   <label className="block text-sm font-semibold mb-2 text-gray-300">Voice ID *</label>
-                  {loadingVoices ? (
-                    <div className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 flex items-center gap-2 text-gray-400">
-                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Loading cloned voices...
-                    </div>
-                  ) : clonedVoices.length > 0 ? (
+                  {voiceActors.length > 0 ? (
                     <select
                       value={voiceId}
                       onChange={(e) => setVoiceId(e.target.value)}
                       className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
                       disabled={loading}
                     >
-                      <option value="">Select a cloned voice</option>
-                      {clonedVoices.map((voice) => (
-                        <option key={voice.voice_id} value={voice.voice_id}>
-                          {voice.name} ({voice.voice_id})
+                      <option value="">Select a voice actor</option>
+                      {voiceActors.map((actor) => (
+                        <option key={actor.voiceId} value={actor.voiceId}>
+                          {actor.name}
                         </option>
                       ))}
                     </select>
                   ) : (
                     <div className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 text-gray-400">
-                      No cloned voices found. Create a voice clone first in the Voice Cloner section.
+                      No voice actors found. Create a voice clone first in the Voice Cloner section.
                     </div>
                   )}
-                  <p className="text-xs text-gray-400 mt-2">Select a voice from your cloned voices.</p>
+                  <p className="text-xs text-gray-400 mt-2">Select a voice actor from your saved voice actors.</p>
                 </div>
 
                 {/* Model Selection */}
