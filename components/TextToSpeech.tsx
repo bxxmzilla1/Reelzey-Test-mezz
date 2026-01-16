@@ -256,6 +256,7 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({ onOpenSettings }) => {
                     <option value="eleven_multilingual_v2">eleven_multilingual_v2</option>
                     <option value="eleven_turbo_v2_5">eleven_turbo_v2_5</option>
                     <option value="eleven_monolingual_v1">eleven_monolingual_v1</option>
+                    <option value="eleven_v3">eleven_v3</option>
                   </select>
                 </div>
 
