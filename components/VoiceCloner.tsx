@@ -87,6 +87,25 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onOpenSettings }) => {
 
       setCreatedVoiceId(voiceId);
       setSuccessMessage(`Voice clone created successfully! Voice ID: ${voiceId}`);
+      
+      // Save to Voice Actors list
+      const voiceActor = {
+        name: voiceName.trim(),
+        voiceId: voiceId,
+        createdAt: new Date().toISOString()
+      };
+      
+      // Get existing voice actors from localStorage
+      const existingActors = JSON.parse(localStorage.getItem('voiceActors') || '[]');
+      
+      // Check if voice ID already exists to avoid duplicates
+      const exists = existingActors.some((actor: any) => actor.voiceId === voiceId);
+      if (!exists) {
+        existingActors.push(voiceActor);
+        localStorage.setItem('voiceActors', JSON.stringify(existingActors));
+        // Dispatch custom event to notify VoiceActors component
+        window.dispatchEvent(new CustomEvent('voiceActorAdded', { detail: voiceActor }));
+      }
     } catch (err: any) {
       setError(extractErrorMessage(err, "Failed to create voice clone. Please try again."));
     } finally {
