@@ -8,6 +8,7 @@ import SettingsModal from './SettingsModal';
 import ScriptCreator from './ScriptCreator';
 import HistorySidebar from './HistorySidebar';
 import MirrorMode from './MirrorMode';
+import VoiceCloner from './VoiceCloner';
 
 const Layout: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState('directorMode');
@@ -91,7 +92,7 @@ const Layout: React.FC = () => {
       // Stay in Mirror Mode, video will be shown in preview card
     } else {
       // Default to Video Creator in Director Mode
-      setActiveView('videoCreator');
+    setActiveView('videoCreator');
     }
     setIsHistoryVisible(false);
   };
@@ -156,7 +157,7 @@ const Layout: React.FC = () => {
       />
 
       {/* Main Content Area - Adjusted for sidebar/footer */}
-      <div className={`pt-16 ${(activeMenu === 'directorMode' || activeMenu === 'mirrorMode' || activeMenu === 'stageCreator') ? 'md:pl-64' : ''} ${(activeMenu === 'directorMode' || activeMenu === 'mirrorMode' || activeMenu === 'stageCreator') ? 'pb-24 md:pb-0' : ''}`}>
+      <div className={`pt-16 ${(activeMenu === 'directorMode' || activeMenu === 'mirrorMode' || activeMenu === 'stageCreator' || activeMenu === 'voiceCloner') ? 'md:pl-64' : ''} ${(activeMenu === 'directorMode' || activeMenu === 'mirrorMode' || activeMenu === 'stageCreator' || activeMenu === 'voiceCloner') ? 'pb-24 md:pb-0' : ''}`}>
         {/* Director Mode Title */}
         {activeMenu === 'directorMode' && (
           <div className="px-4 md:px-8 pt-8 pb-4">
@@ -169,28 +170,34 @@ const Layout: React.FC = () => {
             <h1 className="text-3xl font-bold gradient-text">Stage Creator</h1>
           </div>
         )}
+        {/* Voice Cloner Title */}
+        {activeMenu === 'voiceCloner' && (
+          <div className="px-4 md:px-8 pt-8 pb-4">
+            <h1 className="text-3xl font-bold gradient-text">Voice Cloner</h1>
+          </div>
+        )}
         {/* Show tabs only when Director Mode is active */}
         {activeMenu === 'directorMode' && (
-          <Tabs 
-            activeView={activeView} 
-            onViewChange={setActiveView}
+      <Tabs 
+        activeView={activeView} 
+        onViewChange={setActiveView} 
             showIcons={true}
-          />
+      />
         )}
 
-        <main>
+      <main>
           {activeMenu === 'directorMode' && (
             <>
-              <div style={{ display: activeView === 'scriptCreator' ? 'block' : 'none' }}>
-                <ScriptCreator />
-              </div>
-              <div style={{ display: activeView === 'videoCreator' ? 'block' : 'none' }}>
-                <VideoCreator 
-                  selectedHistoryVideoUrl={selectedHistoryVideoUrl}
-                  clearSelectedHistoryVideoUrl={() => setSelectedHistoryVideoUrl(null)}
-                  onPulseHistoryButton={handlePulseHistoryButton}
-                />
-              </div>
+        <div style={{ display: activeView === 'scriptCreator' ? 'block' : 'none' }}>
+          <ScriptCreator />
+        </div>
+        <div style={{ display: activeView === 'videoCreator' ? 'block' : 'none' }}>
+          <VideoCreator 
+            selectedHistoryVideoUrl={selectedHistoryVideoUrl}
+            clearSelectedHistoryVideoUrl={() => setSelectedHistoryVideoUrl(null)}
+            onPulseHistoryButton={handlePulseHistoryButton}
+          />
+        </div>
             </>
           )}
           {activeMenu === 'mirrorMode' && (
@@ -204,7 +211,12 @@ const Layout: React.FC = () => {
           {activeMenu === 'stageCreator' && (
             <App />
           )}
-        </main>
+          {activeMenu === 'voiceCloner' && (
+            <VoiceCloner 
+              onOpenSettings={() => setIsSettingsOpen(true)}
+            />
+          )}
+      </main>
       </div>
     </div>
   );

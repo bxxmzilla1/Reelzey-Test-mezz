@@ -123,12 +123,12 @@ const FileUpload: React.FC<FileUploadProps> = ({ label, accept, icon, onFileSele
       </div>
       <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
         {showPasteButton && (
-          <button
-            onClick={handlePasteClick}
-            className={actionButtonClasses}
-          >
-            <i className="fas fa-paste"></i> Paste
-          </button>
+        <button
+          onClick={handlePasteClick}
+          className={actionButtonClasses}
+        >
+          <i className="fas fa-paste"></i> Paste
+        </button>
         )}
         {preview && (
           <>
