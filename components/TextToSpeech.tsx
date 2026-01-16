@@ -50,17 +50,49 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({ onOpenSettings }) => {
         // Fetch all voices
         const voicesResponse = await elevenlabs.voices.getAll();
         
+        // Debug: Log the response to see its structure
+        console.log('Voices API Response:', voicesResponse);
+        
+        // Handle different response structures
+        // The response might be an array directly or have a 'voices' property
+        let allVoices: any[] = [];
+        if (Array.isArray(voicesResponse)) {
+          allVoices = voicesResponse;
+        } else if (voicesResponse && typeof voicesResponse === 'object') {
+          allVoices = voicesResponse.voices || voicesResponse.data || [];
+        }
+        
+        console.log('All voices:', allVoices);
+        
         // Filter for cloned voices only (category === 'cloned')
         // This excludes premade, professional, and other default voices
         // Also filter out voices without valid voice_id
-        const cloned = (voicesResponse.voices || []).filter((voice: any) => {
-          return voice.category === 'cloned' && voice.voice_id && voice.voice_id.trim() !== '';
+        const cloned = allVoices.filter((voice: any) => {
+          // Check for cloned category or custom voices
+          const isCloned = voice.category === 'cloned' || 
+                          voice.category === 'custom' ||
+                          (voice.category !== 'premade' && voice.category !== 'professional' && voice.category !== 'default');
+          
+          // Ensure voice_id exists and is valid
+          const hasValidId = voice.voice_id && typeof voice.voice_id === 'string' && voice.voice_id.trim() !== '';
+          
+          return isCloned && hasValidId;
         });
 
-        setClonedVoices(cloned.map((voice: any) => ({
-          voice_id: voice.voice_id.trim(),
-          name: voice.name || voice.voice_id.trim(),
-        })).filter((voice: Voice) => voice.voice_id && voice.voice_id.length > 0));
+        console.log('Cloned voices:', cloned);
+
+        const mappedVoices = cloned.map((voice: any) => {
+          const voiceId = (voice.voice_id || voice.id || '').toString().trim();
+          const voiceName = voice.name || voice.voice_name || voiceId;
+          
+          return {
+            voice_id: voiceId,
+            name: voiceName,
+          };
+        }).filter((voice: Voice) => voice.voice_id && voice.voice_id.length > 0);
+
+        console.log('Mapped cloned voices:', mappedVoices);
+        setClonedVoices(mappedVoices);
       } catch (err: any) {
         console.error('Failed to fetch cloned voices:', err);
         setClonedVoices([]);
@@ -236,7 +268,7 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({ onOpenSettings }) => {
                       <option value="">Select a cloned voice</option>
                       {clonedVoices.map((voice) => (
                         <option key={voice.voice_id} value={voice.voice_id}>
-                          {voice.name} {voice.voice_id ? `(${voice.voice_id})` : ''}
+                          {voice.name} ({voice.voice_id})
                         </option>
                       ))}
                     </select>
