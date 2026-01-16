@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
 import FileUpload from './FileUpload';
 
 interface VoiceClonerProps {
@@ -65,55 +66,20 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onOpenSettings }) => {
 
     try {
       const apiKey = getApiKey();
-      const formData = new FormData();
       
-      // Add voice name
-      formData.append('name', voiceName.trim());
-      
-      // Add all audio files
-      audioFiles.forEach((file) => {
-        formData.append('files', file, file.name);
+      // Initialize ElevenLabs client with API key
+      const elevenlabs = new ElevenLabsClient({
+        apiKey: apiKey,
       });
 
-      const response = await fetch('https://api.elevenlabs.io/v1/voices/ivc', {
-        method: 'POST',
-        headers: {
-          'xi-api-key': apiKey,
-          // Don't set Content-Type header - let browser set it with boundary for multipart/form-data
-        },
-        body: formData,
+      // Create voice clone using the SDK
+      // File objects work directly in browser environment
+      const voice = await elevenlabs.voices.ivc.create({
+        name: voiceName.trim(),
+        files: audioFiles,
       });
 
-      if (!response.ok) {
-        let errorMessage = `API request failed with status ${response.status}`;
-        try {
-          const errorData = await response.json();
-          // Handle different error response formats
-          if (typeof errorData === 'string') {
-            errorMessage = errorData;
-          } else if (errorData.detail) {
-            errorMessage = typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail);
-          } else if (errorData.message) {
-            if (typeof errorData.message === 'string') {
-              errorMessage = errorData.message;
-            } else if (errorData.message.detail) {
-              errorMessage = typeof errorData.message.detail === 'string' ? errorData.message.detail : JSON.stringify(errorData.message.detail);
-            } else {
-              errorMessage = JSON.stringify(errorData.message);
-            }
-          } else if (errorData.error) {
-            errorMessage = typeof errorData.error === 'string' ? errorData.error : JSON.stringify(errorData.error);
-          } else {
-            errorMessage = JSON.stringify(errorData);
-          }
-        } catch (e) {
-          errorMessage = response.statusText || errorMessage;
-        }
-        throw new Error(errorMessage);
-      }
-
-      const result = await response.json();
-      const voiceId = result.voice_id || result.id;
+      const voiceId = voice.voiceId || (voice as any).voice_id || (voice as any).id;
       
       if (!voiceId) {
         throw new Error('Voice created but no voice ID returned from API.');
