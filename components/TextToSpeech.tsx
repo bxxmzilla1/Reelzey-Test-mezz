@@ -5,6 +5,11 @@ interface TextToSpeechProps {
   onOpenSettings?: () => void;
 }
 
+interface Voice {
+  voice_id: string;
+  name: string;
+}
+
 const TextToSpeech: React.FC<TextToSpeechProps> = ({ onOpenSettings }) => {
   const [text, setText] = useState('');
   const [voiceId, setVoiceId] = useState('');
@@ -14,6 +19,8 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({ onOpenSettings }) => {
   const [error, setError] = useState<string | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [hasApiKey, setHasApiKey] = useState<boolean>(false);
+  const [clonedVoices, setClonedVoices] = useState<Voice[]>([]);
+  const [loadingVoices, setLoadingVoices] = useState(false);
 
   useEffect(() => {
     const checkApiKey = () => {
@@ -24,6 +31,45 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({ onOpenSettings }) => {
     const interval = setInterval(checkApiKey, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Fetch cloned voices on mount and when API key changes
+  useEffect(() => {
+    const fetchClonedVoices = async () => {
+      const apiKey = localStorage.getItem('elevenlabsApiKey');
+      if (!apiKey || apiKey.trim() === '') {
+        setClonedVoices([]);
+        return;
+      }
+
+      setLoadingVoices(true);
+      try {
+        const elevenlabs = new ElevenLabsClient({
+          apiKey: apiKey.trim(),
+        });
+
+        // Fetch all voices
+        const voicesResponse = await elevenlabs.voices.getAll();
+        
+        // Filter for cloned voices only (category === 'cloned')
+        // This excludes premade, professional, and other default voices
+        const cloned = (voicesResponse.voices || []).filter((voice: any) => {
+          return voice.category === 'cloned';
+        });
+
+        setClonedVoices(cloned.map((voice: any) => ({
+          voice_id: voice.voice_id,
+          name: voice.name || voice.voice_id,
+        })));
+      } catch (err: any) {
+        console.error('Failed to fetch cloned voices:', err);
+        setClonedVoices([]);
+      } finally {
+        setLoadingVoices(false);
+      }
+    };
+
+    fetchClonedVoices();
+  }, [hasApiKey]);
 
   const getApiKey = (): string => {
     const apiKey = localStorage.getItem('elevenlabsApiKey');
@@ -162,18 +208,37 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({ onOpenSettings }) => {
                   />
                 </div>
 
-                {/* Voice ID Input */}
+                {/* Voice ID Dropdown */}
                 <div>
                   <label className="block text-sm font-semibold mb-2 text-gray-300">Voice ID *</label>
-                  <input
-                    type="text"
-                    value={voiceId}
-                    onChange={(e) => setVoiceId(e.target.value)}
-                    placeholder="JBFqnCBsd6RMkjVDRZzb"
-                    className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300 placeholder-gray-500"
-                    disabled={loading}
-                  />
-                  <p className="text-xs text-gray-400 mt-2">Enter the voice ID from your cloned voices or use a default ElevenLabs voice ID.</p>
+                  {loadingVoices ? (
+                    <div className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 flex items-center gap-2 text-gray-400">
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Loading cloned voices...
+                    </div>
+                  ) : clonedVoices.length > 0 ? (
+                    <select
+                      value={voiceId}
+                      onChange={(e) => setVoiceId(e.target.value)}
+                      className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
+                      disabled={loading}
+                    >
+                      <option value="">Select a cloned voice</option>
+                      {clonedVoices.map((voice) => (
+                        <option key={voice.voice_id} value={voice.voice_id}>
+                          {voice.name} ({voice.voice_id})
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 text-gray-400">
+                      No cloned voices found. Create a voice clone first in the Voice Cloner section.
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-400 mt-2">Select a voice from your cloned voices.</p>
                 </div>
 
                 {/* Model Selection */}
