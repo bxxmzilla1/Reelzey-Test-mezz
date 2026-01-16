@@ -275,25 +275,6 @@ const VoiceChanger: React.FC<VoiceChangerProps> = ({ onOpenSettings }) => {
                   </select>
                 </div>
 
-                {/* Output Format Selection */}
-                <div>
-                  <label className="block text-sm font-semibold mb-2 text-gray-300">Output Format</label>
-                  <select
-                    value={outputFormat}
-                    onChange={(e) => setOutputFormat(e.target.value)}
-                    className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
-                    disabled={loading}
-                  >
-                    <option value="mp3_44100_128">MP3 44.1kHz 128kbps</option>
-                    <option value="mp3_44100_192">MP3 44.1kHz 192kbps</option>
-                    <option value="pcm_16000">PCM 16kHz</option>
-                    <option value="pcm_22050">PCM 22.05kHz</option>
-                    <option value="pcm_24000">PCM 24kHz</option>
-                    <option value="pcm_44100">PCM 44.1kHz</option>
-                    <option value="ulaw_8000">μ-law 8kHz</option>
-                  </select>
-                </div>
-
                 {/* Convert Button */}
                 {!audioUrl && (
                   <button
