@@ -107,8 +107,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onOpenSettings }) => {
     <div className="px-4 md:px-8 pb-8 max-w-4xl mx-auto">
       <div className="flex flex-col gap-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold gradient-text">Voice Cloner</h1>
+        <div className="flex items-center justify-end">
           <button
             onClick={handleReset}
             className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-xl transition-all flex items-center gap-2"
