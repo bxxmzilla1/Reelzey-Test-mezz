@@ -116,27 +116,6 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onOpenSettings }) => {
           </button>
         </div>
 
-        {/* API Key Warning */}
-        {!hasApiKey && (
-          <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-400 flex gap-3 items-start">
-            <i className="fas fa-exclamation-triangle mt-1"></i>
-            <div className="flex-1">
-              <p className="font-semibold mb-1">ElevenLabs API Key Required</p>
-              <p className="text-sm text-yellow-300/80">
-                Please configure your ElevenLabs API key in Settings to use Voice Cloner features.
-                {onOpenSettings && (
-                  <button
-                    onClick={onOpenSettings}
-                    className="ml-2 underline hover:text-yellow-200 transition-colors"
-                  >
-                    Open Settings
-                  </button>
-                )}
-              </p>
-            </div>
-          </div>
-        )}
-
         {loading ? (
           <div className="flex flex-col items-center justify-center gap-4 p-8 glass rounded-3xl min-h-[50vh]">
             <svg className="animate-spin h-10 w-10 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
