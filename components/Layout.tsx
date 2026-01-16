@@ -170,6 +170,12 @@ const Layout: React.FC = () => {
             <h1 className="text-3xl font-bold gradient-text">Stage Creator</h1>
           </div>
         )}
+        {/* Mirror Mode Title */}
+        {activeMenu === 'mirrorMode' && (
+          <div className="px-4 md:px-8 pt-8 pb-4">
+            <h1 className="text-3xl font-bold gradient-text">Mirror Mode</h1>
+          </div>
+        )}
         {/* Voice Cloner Title */}
         {activeMenu === 'voiceCloner' && (
           <div className="px-4 md:px-8 pt-8 pb-4">
