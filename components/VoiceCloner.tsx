@@ -28,7 +28,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onOpenSettings }) => {
   const [voiceName, setVoiceName] = useState('');
   const [voiceLanguage, setVoiceLanguage] = useState('en');
   const [voiceDescription, setVoiceDescription] = useState('');
-  const [audioFiles, setAudioFiles] = useState<FileData[]>([]);
+  const [audioFiles, setAudioFiles] = useState<File[]>([]);
   const [createdVoice, setCreatedVoice] = useState<Voice | null>(null);
   const [samples, setSamples] = useState<Sample[]>([]);
   const [selectedSpeakerIds, setSelectedSpeakerIds] = useState<string[]>([]);
@@ -58,11 +58,9 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onOpenSettings }) => {
     return apiKey.trim();
   };
 
-  const handleAudioSelect = useCallback(async (file: File) => {
+  const handleAudioSelect = useCallback((file: File) => {
     setError(null);
-    const base64 = await convertToBase64(file);
-    const newFile: FileData = { file, preview: URL.createObjectURL(file), base64 };
-    setAudioFiles(prev => [...prev, newFile]);
+    setAudioFiles(prev => [...prev, file]);
   }, []);
 
   const convertToBase64 = (file: File): Promise<string> => {
@@ -86,22 +84,35 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onOpenSettings }) => {
 
     try {
       const apiKey = getApiKey();
+      const requestBody: any = {
+        name: voiceName,
+        language: voiceLanguage,
+      };
+      
+      // Only include description if it's not empty
+      if (voiceDescription && voiceDescription.trim() !== '') {
+        requestBody.description = voiceDescription.trim();
+      }
+
       const response = await fetch('https://api.elevenlabs.io/v1/voices/pvc', {
         method: 'POST',
         headers: {
           'xi-api-key': apiKey,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: voiceName,
-          language: voiceLanguage,
-          description: voiceDescription || undefined,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: response.statusText }));
-        throw new Error(errorData.message?.detail || errorData.message || `API request failed with status ${response.status}`);
+        let errorMessage = `API request failed with status ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.detail || errorData.message?.detail || errorData.message || errorMessage;
+        } catch (e) {
+          // If JSON parsing fails, use the status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
       const voice = await response.json();
@@ -130,22 +141,29 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onOpenSettings }) => {
       const apiKey = getApiKey();
       const formData = new FormData();
       
-      audioFiles.forEach((fileData) => {
-        const blob = base64ToBlob(fileData.base64, fileData.file.type);
-        formData.append('files', blob, fileData.file.name);
+      // Append each file directly - FormData handles File objects properly
+      audioFiles.forEach((file) => {
+        formData.append('files', file, file.name);
       });
 
       const response = await fetch(`https://api.elevenlabs.io/v1/voices/pvc/${createdVoice.voice_id}/samples`, {
         method: 'POST',
         headers: {
           'xi-api-key': apiKey,
+          // Don't set Content-Type header - let browser set it with boundary for multipart/form-data
         },
         body: formData,
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: response.statusText }));
-        throw new Error(errorData.message?.detail || errorData.message || `API request failed with status ${response.status}`);
+        let errorMessage = `API request failed with status ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.detail || errorData.message?.detail || errorData.message || errorMessage;
+        } catch (e) {
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
@@ -640,7 +658,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onOpenSettings }) => {
                         {audioFiles.map((file, index) => (
                           <div key={index} className="px-3 py-2 bg-gray-800 rounded-lg text-sm text-gray-300 flex items-center gap-2">
                             <i className="fas fa-file-audio"></i>
-                            <span>{file.file.name}</span>
+                            <span>{file.name}</span>
                             {step === 2 && (
                               <button
                                 onClick={() => setAudioFiles(prev => prev.filter((_, i) => i !== index))}
