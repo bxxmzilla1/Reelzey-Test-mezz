@@ -52,14 +52,15 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({ onOpenSettings }) => {
         
         // Filter for cloned voices only (category === 'cloned')
         // This excludes premade, professional, and other default voices
+        // Also filter out voices without valid voice_id
         const cloned = (voicesResponse.voices || []).filter((voice: any) => {
-          return voice.category === 'cloned';
+          return voice.category === 'cloned' && voice.voice_id && voice.voice_id.trim() !== '';
         });
 
         setClonedVoices(cloned.map((voice: any) => ({
-          voice_id: voice.voice_id,
-          name: voice.name || voice.voice_id,
-        })));
+          voice_id: voice.voice_id.trim(),
+          name: voice.name || voice.voice_id.trim(),
+        })).filter((voice: Voice) => voice.voice_id && voice.voice_id.length > 0));
       } catch (err: any) {
         console.error('Failed to fetch cloned voices:', err);
         setClonedVoices([]);
@@ -96,7 +97,13 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({ onOpenSettings }) => {
     }
 
     if (!voiceId.trim()) {
-      setError("Please enter a voice ID.");
+      setError("Please select a voice from the dropdown.");
+      return;
+    }
+
+    // Validate voice ID format (should be a valid UUID-like string)
+    if (voiceId.length < 10 || voiceId.includes('(') || voiceId.includes(')')) {
+      setError("Invalid voice ID selected. Please select a valid voice from the dropdown.");
       return;
     }
 
@@ -229,7 +236,7 @@ const TextToSpeech: React.FC<TextToSpeechProps> = ({ onOpenSettings }) => {
                       <option value="">Select a cloned voice</option>
                       {clonedVoices.map((voice) => (
                         <option key={voice.voice_id} value={voice.voice_id}>
-                          {voice.name} ({voice.voice_id})
+                          {voice.name} {voice.voice_id ? `(${voice.voice_id})` : ''}
                         </option>
                       ))}
                     </select>
