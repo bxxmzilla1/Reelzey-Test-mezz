@@ -10,6 +10,7 @@ import HistorySidebar from './HistorySidebar';
 import MirrorMode from './MirrorMode';
 import VoiceCloner from './VoiceCloner';
 import TextToSpeech from './TextToSpeech';
+import VoiceActors from './VoiceActors';
 
 const Layout: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState('directorMode');
@@ -158,7 +159,7 @@ const Layout: React.FC = () => {
       />
 
       {/* Main Content Area - Adjusted for sidebar/footer */}
-      <div className={`pt-16 ${(activeMenu === 'directorMode' || activeMenu === 'mirrorMode' || activeMenu === 'stageCreator' || activeMenu === 'voiceCloner' || activeMenu === 'textToSpeech') ? 'md:pl-64' : ''} ${(activeMenu === 'directorMode' || activeMenu === 'mirrorMode' || activeMenu === 'stageCreator' || activeMenu === 'voiceCloner' || activeMenu === 'textToSpeech') ? 'pb-24 md:pb-0' : ''}`}>
+      <div className={`pt-16 ${(activeMenu === 'directorMode' || activeMenu === 'mirrorMode' || activeMenu === 'stageCreator' || activeMenu === 'voiceCloner' || activeMenu === 'textToSpeech' || activeMenu === 'voiceActors') ? 'md:pl-64' : ''} ${(activeMenu === 'directorMode' || activeMenu === 'mirrorMode' || activeMenu === 'stageCreator' || activeMenu === 'voiceCloner' || activeMenu === 'textToSpeech' || activeMenu === 'voiceActors') ? 'pb-24 md:pb-0' : ''}`}>
         {/* Director Mode Title */}
         {activeMenu === 'directorMode' && (
           <div className="px-4 md:px-8 pt-8 pb-4">
@@ -187,6 +188,12 @@ const Layout: React.FC = () => {
         {activeMenu === 'textToSpeech' && (
           <div className="px-4 md:px-8 pt-8 pb-4">
             <h1 className="text-3xl font-bold gradient-text">Text To Speech</h1>
+          </div>
+        )}
+        {/* Voice Actors Title */}
+        {activeMenu === 'voiceActors' && (
+          <div className="px-4 md:px-8 pt-8 pb-4">
+            <h1 className="text-3xl font-bold gradient-text">Voice Actors</h1>
           </div>
         )}
         {/* Show tabs only when Director Mode is active */}
@@ -233,6 +240,9 @@ const Layout: React.FC = () => {
             <TextToSpeech 
               onOpenSettings={() => setIsSettingsOpen(true)}
             />
+          )}
+          {activeMenu === 'voiceActors' && (
+            <VoiceActors />
           )}
       </main>
       </div>
