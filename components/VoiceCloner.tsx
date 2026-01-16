@@ -58,6 +58,16 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onOpenSettings }) => {
     return apiKey.trim();
   };
 
+  const extractErrorMessage = (err: any, defaultMsg: string): string => {
+    if (!err) return defaultMsg;
+    if (typeof err === 'string') return err;
+    if (err.message) {
+      if (typeof err.message === 'string') return err.message;
+      return String(err.message);
+    }
+    return String(err);
+  };
+
   const handleAudioSelect = useCallback((file: File) => {
     setError(null);
     setAudioFiles(prev => [...prev, file]);
@@ -84,15 +94,24 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onOpenSettings }) => {
 
     try {
       const apiKey = getApiKey();
+      
+      // Validate required fields
+      if (!voiceName || voiceName.trim() === '') {
+        throw new Error('Voice name is required');
+      }
+      
       const requestBody: any = {
-        name: voiceName,
-        language: voiceLanguage,
+        name: voiceName.trim(),
+        language: voiceLanguage || 'en', // Default to English if not set
       };
       
       // Only include description if it's not empty
       if (voiceDescription && voiceDescription.trim() !== '') {
         requestBody.description = voiceDescription.trim();
       }
+
+      // Log request for debugging (remove in production if needed)
+      console.log('Creating PVC voice with:', requestBody);
 
       const response = await fetch('https://api.elevenlabs.io/v1/voices/pvc', {
         method: 'POST',
@@ -107,7 +126,24 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onOpenSettings }) => {
         let errorMessage = `API request failed with status ${response.status}`;
         try {
           const errorData = await response.json();
-          errorMessage = errorData.detail || errorData.message?.detail || errorData.message || errorMessage;
+          // Handle different error response formats
+          if (typeof errorData === 'string') {
+            errorMessage = errorData;
+          } else if (errorData.detail) {
+            errorMessage = typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail);
+          } else if (errorData.message) {
+            if (typeof errorData.message === 'string') {
+              errorMessage = errorData.message;
+            } else if (errorData.message.detail) {
+              errorMessage = typeof errorData.message.detail === 'string' ? errorData.message.detail : JSON.stringify(errorData.message.detail);
+            } else {
+              errorMessage = JSON.stringify(errorData.message);
+            }
+          } else if (errorData.error) {
+            errorMessage = typeof errorData.error === 'string' ? errorData.error : JSON.stringify(errorData.error);
+          } else {
+            errorMessage = JSON.stringify(errorData);
+          }
         } catch (e) {
           // If JSON parsing fails, use the status text
           errorMessage = response.statusText || errorMessage;
@@ -120,7 +156,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onOpenSettings }) => {
       setStep(2);
       setSuccessMessage("Voice created successfully!");
     } catch (err: any) {
-      setError(err.message || "Failed to create voice. Please try again.");
+      setError(extractErrorMessage(err, "Failed to create voice. Please try again."));
     } finally {
       setLoading(false);
       setLoadingMessage('');
@@ -159,7 +195,24 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onOpenSettings }) => {
         let errorMessage = `API request failed with status ${response.status}`;
         try {
           const errorData = await response.json();
-          errorMessage = errorData.detail || errorData.message?.detail || errorData.message || errorMessage;
+          // Handle different error response formats
+          if (typeof errorData === 'string') {
+            errorMessage = errorData;
+          } else if (errorData.detail) {
+            errorMessage = typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail);
+          } else if (errorData.message) {
+            if (typeof errorData.message === 'string') {
+              errorMessage = errorData.message;
+            } else if (errorData.message.detail) {
+              errorMessage = typeof errorData.message.detail === 'string' ? errorData.message.detail : JSON.stringify(errorData.message.detail);
+            } else {
+              errorMessage = JSON.stringify(errorData.message);
+            }
+          } else if (errorData.error) {
+            errorMessage = typeof errorData.error === 'string' ? errorData.error : JSON.stringify(errorData.error);
+          } else {
+            errorMessage = JSON.stringify(errorData);
+          }
         } catch (e) {
           errorMessage = response.statusText || errorMessage;
         }
@@ -171,7 +224,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onOpenSettings }) => {
       setStep(3);
       setSuccessMessage("Audio files uploaded successfully!");
     } catch (err: any) {
-      setError(err.message || "Failed to upload audio files. Please try again.");
+      setError(extractErrorMessage(err, "Failed to upload audio files. Please try again."));
     } finally {
       setLoading(false);
       setLoadingMessage('');
@@ -248,7 +301,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onOpenSettings }) => {
         throw new Error("Speaker separation timed out. Please try again.");
       }
     } catch (err: any) {
-      setError(err.message || "Failed to separate speakers. Please try again.");
+      setError(extractErrorMessage(err, "Failed to separate speakers. Please try again."));
     } finally {
       setLoading(false);
       setLoadingMessage('');
@@ -298,7 +351,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onOpenSettings }) => {
       setStep(5);
       setSuccessMessage("Speakers retrieved successfully!");
     } catch (err: any) {
-      setError(err.message || "Failed to retrieve speakers. Please try again.");
+      setError(extractErrorMessage(err, "Failed to retrieve speakers. Please try again."));
     } finally {
       setLoading(false);
       setLoadingMessage('');
@@ -336,7 +389,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onOpenSettings }) => {
       setStep(6);
       setSuccessMessage("Samples updated successfully!");
     } catch (err: any) {
-      setError(err.message || "Failed to update samples. Please try again.");
+      setError(extractErrorMessage(err, "Failed to update samples. Please try again."));
     } finally {
       setLoading(false);
       setLoadingMessage('');
@@ -372,7 +425,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onOpenSettings }) => {
       setStep(7);
       setSuccessMessage("CAPTCHA retrieved. Please read the text and record it.");
     } catch (err: any) {
-      setError(err.message || "Failed to get CAPTCHA. Please try again.");
+      setError(extractErrorMessage(err, "Failed to get CAPTCHA. Please try again."));
     } finally {
       setLoading(false);
       setLoadingMessage('');
@@ -411,7 +464,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onOpenSettings }) => {
       setStep(8);
       setSuccessMessage("CAPTCHA verified successfully!");
     } catch (err: any) {
-      setError(err.message || "Failed to verify CAPTCHA. Please try again.");
+      setError(extractErrorMessage(err, "Failed to verify CAPTCHA. Please try again."));
     } finally {
       setLoading(false);
       setLoadingMessage('');
@@ -482,7 +535,7 @@ const VoiceCloner: React.FC<VoiceClonerProps> = ({ onOpenSettings }) => {
         throw new Error("Training timed out. Please check the status later.");
       }
     } catch (err: any) {
-      setError(err.message || "Failed to train voice. Please try again.");
+      setError(extractErrorMessage(err, "Failed to train voice. Please try again."));
     } finally {
       setLoading(false);
       setLoadingMessage('');
