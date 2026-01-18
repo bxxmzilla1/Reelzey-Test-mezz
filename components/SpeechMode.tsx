@@ -176,6 +176,36 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
 
       const data = await response.json();
       setResult(data);
+      
+      // Save to generation history
+      if (data && data.data && data.data.taskId) {
+        const kiePrediction = {
+          id: data.data.taskId,
+          status: 'processing' as const,
+          created_at: new Date().toISOString(),
+          outputs: [],
+          error: null,
+          model: model,
+          taskId: data.data.taskId,
+          prompt: prompt.trim(),
+        };
+        
+        // Load existing Kie history
+        const existingHistory = localStorage.getItem('kieHistory');
+        const history: any[] = existingHistory ? JSON.parse(existingHistory) : [];
+        
+        // Add new prediction
+        history.unshift(kiePrediction);
+        
+        // Keep only last 100 items
+        const trimmedHistory = history.slice(0, 100);
+        
+        // Save back to localStorage
+        localStorage.setItem('kieHistory', JSON.stringify(trimmedHistory));
+        
+        // Dispatch event to notify HistorySidebar
+        window.dispatchEvent(new CustomEvent('kieHistoryUpdated'));
+      }
     } catch (err: any) {
       setError(extractErrorMessage(err, "Failed to generate video. Please try again."));
     } finally {
@@ -360,7 +390,7 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
                     className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
                     disabled={loading}
                   />
-                  <p className="text-xs text-gray-400 mt-2">The system will POST task completion results to this URL when video generation is completed.</p>
+                  <p className="text-xs text-gray-400 mt-2">The system will POST task completion results to this URL when video generation is completed. Results will automatically appear in the Generation History sidebar under the "Kie" tab.</p>
                   
                   {/* Callback Documentation */}
                   {showCallbackDocs && (

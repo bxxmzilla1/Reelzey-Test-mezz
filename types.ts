@@ -26,3 +26,16 @@ export interface PredictionResponse {
     items: Prediction[];
   };
 }
+
+export interface KiePrediction {
+  id: string;
+  status: 'completed' | 'processing' | 'failed';
+  created_at: string;
+  outputs: string[];
+  error: string | null;
+  model: string;
+  taskId?: string;
+  prompt?: string;
+  resolution?: string;
+  fallbackFlag?: boolean;
+}

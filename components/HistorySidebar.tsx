@@ -1,14 +1,76 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Prediction } from '../types';
+import { Prediction, KiePrediction } from '../types';
 
 interface HistorySidebarProps {
   onSelectVideo: (url: string) => void;
   onClose: () => void;
 }
 
+type TabType = 'wavespeed' | 'kie';
+
+// Utility function to update Kie prediction from callback data
+export const updateKiePredictionFromCallback = (callbackData: any) => {
+    try {
+        const existingHistory = localStorage.getItem('kieHistory');
+        const history: KiePrediction[] = existingHistory ? JSON.parse(existingHistory) : [];
+        
+        // Extract taskId from callback data
+        const taskId = callbackData?.data?.taskId;
+        if (!taskId) {
+            console.error('No taskId in callback data');
+            return;
+        }
+        
+        // Find the prediction and update it
+        const index = history.findIndex(p => p.id === taskId || p.taskId === taskId);
+        
+        if (index !== -1) {
+            const updatedPrediction: KiePrediction = {
+                ...history[index],
+                status: callbackData.code === 200 ? 'completed' : 'failed',
+                outputs: callbackData?.data?.info?.resultUrls || [],
+                error: callbackData.code !== 200 ? callbackData.msg : null,
+                resolution: callbackData?.data?.info?.resolution,
+                fallbackFlag: callbackData?.data?.fallbackFlag,
+            };
+            
+            history[index] = updatedPrediction;
+            localStorage.setItem('kieHistory', JSON.stringify(history));
+            
+            // Dispatch event to notify HistorySidebar
+            window.dispatchEvent(new CustomEvent('kieHistoryUpdated'));
+        } else {
+            // If not found, create a new entry
+            const newPrediction: KiePrediction = {
+                id: taskId,
+                status: callbackData.code === 200 ? 'completed' : 'failed',
+                created_at: new Date().toISOString(),
+                outputs: callbackData?.data?.info?.resultUrls || [],
+                error: callbackData.code !== 200 ? callbackData.msg : null,
+                model: 'veo3_fast',
+                taskId: taskId,
+                resolution: callbackData?.data?.info?.resolution,
+                fallbackFlag: callbackData?.data?.fallbackFlag,
+            };
+            
+            history.unshift(newPrediction);
+            const trimmedHistory = history.slice(0, 100);
+            localStorage.setItem('kieHistory', JSON.stringify(trimmedHistory));
+            
+            // Dispatch event to notify HistorySidebar
+            window.dispatchEvent(new CustomEvent('kieHistoryUpdated'));
+        }
+    } catch (err) {
+        console.error('Failed to update Kie prediction from callback:', err);
+    }
+};
+
 const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose }) => {
+    const [activeTab, setActiveTab] = useState<TabType>('wavespeed');
     const [predictions, setPredictions] = useState<Prediction[]>([]);
+    const [kiePredictions, setKiePredictions] = useState<KiePrediction[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [kieLoading, setKieLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [hoveredVideoUrl, setHoveredVideoUrl] = useState<string | null>(null);
     const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
@@ -48,9 +110,44 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
         }
     }, []);
 
+    const fetchKieHistory = useCallback(() => {
+        setKieLoading(true);
+        try {
+            const existingHistory = localStorage.getItem('kieHistory');
+            const history: KiePrediction[] = existingHistory ? JSON.parse(existingHistory) : [];
+            setKiePredictions(history);
+        } catch (err: any) {
+            console.error('Failed to load Kie history:', err);
+        } finally {
+            setKieLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
         fetchHistory();
-    }, [fetchHistory]);
+        fetchKieHistory();
+    }, [fetchHistory, fetchKieHistory]);
+
+    // Listen for Kie history updates
+    useEffect(() => {
+        const handleKieHistoryUpdate = () => {
+            fetchKieHistory();
+        };
+        
+        window.addEventListener('kieHistoryUpdated', handleKieHistoryUpdate);
+        return () => {
+            window.removeEventListener('kieHistoryUpdated', handleKieHistoryUpdate);
+        };
+    }, [fetchKieHistory]);
+
+    // Auto-refresh Kie history periodically to pick up updates
+    useEffect(() => {
+        const interval = setInterval(() => {
+            fetchKieHistory();
+        }, 30000); // Refresh every 30 seconds
+        
+        return () => clearInterval(interval);
+    }, [fetchKieHistory]);
     
     const StatusIndicator = ({ status }: { status: string }) => {
         let colorClasses = '';
@@ -70,8 +167,8 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
         return <span className={`px-2 py-1 text-xs font-semibold rounded-md border ${colorClasses} capitalize`}>{status}</span>;
     };
 
-    const groupPredictionsByDate = (predictions: Prediction[]) => {
-        const grouped: { [key: string]: Prediction[] } = {};
+    const groupPredictionsByDate = (predictions: (Prediction | KiePrediction)[]) => {
+        const grouped: { [key: string]: (Prediction | KiePrediction)[] } = {};
         
         predictions.forEach(pred => {
             const date = new Date(pred.created_at);
@@ -122,7 +219,8 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
     };
 
     const handleDownloadSelected = async () => {
-        const selectedPredictions = predictions.filter(p => 
+        const currentPredictions = activeTab === 'wavespeed' ? predictions : kiePredictions;
+        const selectedPredictions = currentPredictions.filter(p => 
             selectedIds.has(p.id) && 
             p.status === 'completed' && 
             p.outputs && 
@@ -140,7 +238,7 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
             const date = new Date(pred.created_at);
             const dateStr = date.toISOString().split('T')[0];
             const timeStr = date.toTimeString().split(' ')[0].replace(/:/g, '-');
-            const filename = `video_${dateStr}_${timeStr}_${pred.id.slice(0, 8)}.mp4`;
+            const filename = `${activeTab}_video_${dateStr}_${timeStr}_${pred.id.slice(0, 8)}.mp4`;
 
             try {
                 const response = await fetch(videoUrl);
@@ -176,19 +274,51 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
         >
             <div className="fixed top-0 right-0 h-full w-full md:w-96 bg-gray-900/50 backdrop-blur-lg animate-in slide-in-from-right-full duration-300 z-[60]" onClick={(e) => e.stopPropagation()}>
                 <div className="flex flex-col h-full glass border-l border-purple-500/20">
-                <div className="flex items-center justify-between p-4 border-b border-gray-800">
-                    <h2 className="text-xl font-semibold">Generation History</h2>
-                    <div className="flex items-center gap-2">
-                        <button 
-                            onClick={fetchHistory} 
-                            disabled={isLoading}
-                            className={`text-gray-500 hover:text-purple-400 transition-colors p-2 rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed ${isLoading ? 'animate-spin' : ''}`}
-                            title="Refresh History"
+                <div className="flex flex-col border-b border-gray-800">
+                    <div className="flex items-center justify-between p-4">
+                        <h2 className="text-xl font-semibold">Generation History</h2>
+                        <div className="flex items-center gap-2">
+                            <button 
+                                onClick={() => activeTab === 'wavespeed' ? fetchHistory() : fetchKieHistory()} 
+                                disabled={activeTab === 'wavespeed' ? isLoading : kieLoading}
+                                className={`text-gray-500 hover:text-purple-400 transition-colors p-2 rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed`}
+                                title="Refresh History"
+                            >
+                                <i className={`fas fa-sync-alt text-lg ${(activeTab === 'wavespeed' ? isLoading : kieLoading) ? 'animate-spin' : ''}`}></i>
+                            </button>
+                            <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors p-2 rounded-lg hover:bg-gray-800">
+                                <i className="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {/* Tabs */}
+                    <div className="flex border-t border-gray-800">
+                        <button
+                            onClick={() => {
+                                setActiveTab('wavespeed');
+                                setSelectedIds(new Set());
+                            }}
+                            className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors ${
+                                activeTab === 'wavespeed'
+                                    ? 'bg-purple-600/20 text-purple-400 border-b-2 border-purple-500'
+                                    : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/50'
+                            }`}
                         >
-                            <i className={`fas fa-sync-alt text-lg ${isLoading ? 'animate-spin' : ''}`}></i>
+                            Wavespeed
                         </button>
-                        <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors p-2 rounded-lg hover:bg-gray-800">
-                            <i className="fas fa-times text-xl"></i>
+                        <button
+                            onClick={() => {
+                                setActiveTab('kie');
+                                setSelectedIds(new Set());
+                            }}
+                            className={`flex-1 px-4 py-3 text-sm font-semibold transition-colors ${
+                                activeTab === 'kie'
+                                    ? 'bg-purple-600/20 text-purple-400 border-b-2 border-purple-500'
+                                    : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/50'
+                            }`}
+                        >
+                            Kie
                         </button>
                     </div>
                 </div>
@@ -207,16 +337,19 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
                 )}
 
                 <div className="flex-grow overflow-y-auto p-4">
-                    {isLoading && (
+                    {(activeTab === 'wavespeed' ? isLoading : kieLoading) && (
                         <div className="flex items-center justify-center h-full">
                            <svg className="animate-spin h-8 w-8 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                         </div>
                     )}
-                    {error && <p className="text-red-400 text-center p-4 bg-red-500/10 rounded-lg">{error}</p>}
-                    {!isLoading && !error && predictions.length === 0 && (
+                    {error && activeTab === 'wavespeed' && <p className="text-red-400 text-center p-4 bg-red-500/10 rounded-lg">{error}</p>}
+                    {activeTab === 'wavespeed' && !isLoading && !error && predictions.length === 0 && (
                         <p className="text-gray-500 text-center mt-8">No recent video generations found.</p>
                     )}
-                    {!isLoading && !error && predictions.length > 0 && (
+                    {activeTab === 'kie' && !kieLoading && kiePredictions.length === 0 && (
+                        <p className="text-gray-500 text-center mt-8">No recent Kie video generations found.</p>
+                    )}
+                    {activeTab === 'wavespeed' && !isLoading && !error && predictions.length > 0 && (
                         <div className="space-y-6">
                             {groupPredictionsByDate(predictions).map(({ date, predictions: datePredictions }) => (
                                 <div key={date} className="space-y-3">
@@ -318,9 +451,116 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
                             ))}
                         </div>
                     )}
+                    {activeTab === 'kie' && !kieLoading && kiePredictions.length > 0 && (
+                        <div className="space-y-6">
+                            {groupPredictionsByDate(kiePredictions).map(({ date, predictions: datePredictions }) => (
+                                <div key={date} className="space-y-3">
+                                    {/* Date Separator */}
+                                    <div className="flex items-center gap-3 py-2">
+                                        <div className="flex-grow border-t border-purple-500/30"></div>
+                                        <span className="text-xs font-semibold text-purple-400 uppercase tracking-wider px-3">
+                                            {date}
+                                        </span>
+                                        <div className="flex-grow border-t border-purple-500/30"></div>
+                                    </div>
+                                    
+                                    {/* Videos for this date */}
+                                    <ul className="space-y-3">
+                                        {datePredictions.map(pred => {
+                                            const kiePred = pred as KiePrediction;
+                                            return (
+                                                <li
+                                                    key={kiePred.id}
+                                                    onClick={() => kiePred.status === 'completed' && kiePred.outputs.length > 0 && onSelectVideo(kiePred.outputs[0])}
+                                                    onMouseEnter={(e) => {
+                                                        if (kiePred.status === 'completed' && kiePred.outputs.length > 0) {
+                                                            const rect = e.currentTarget.getBoundingClientRect();
+                                                            const popupWidth = 400;
+                                                            const popupHeight = 300;
+                                                            const spacing = 20;
+                                                            
+                                                            // Calculate position to the left of sidebar
+                                                            let x = rect.left - popupWidth - spacing;
+                                                            let y = rect.top;
+                                                            
+                                                            // Ensure popup stays within viewport
+                                                            if (x < 20) {
+                                                                x = 20; // Minimum left margin
+                                                            }
+                                                            if (y + popupHeight > window.innerHeight - 20) {
+                                                                y = window.innerHeight - popupHeight - 20; // Adjust if too low
+                                                            }
+                                                            if (y < 20) {
+                                                                y = 20; // Minimum top margin
+                                                            }
+                                                            
+                                                            setHoveredVideoUrl(kiePred.outputs[0]);
+                                                            setHoverPosition({ x, y });
+                                                        }
+                                                    }}
+                                                    onMouseLeave={() => {
+                                                        setHoveredVideoUrl(null);
+                                                        setHoverPosition(null);
+                                                    }}
+                                                    className={`glass p-3 rounded-xl transition-all relative ${
+                                                        kiePred.status === 'completed' 
+                                                            ? `cursor-pointer hover:border-purple-500 ${selectedIds.has(kiePred.id) ? 'border-purple-500 bg-purple-500/10' : ''}` 
+                                                            : 'cursor-default'
+                                                    }`}
+                                                >
+                                                    {/* Checkbox for selection */}
+                                                    {kiePred.status === 'completed' && kiePred.outputs.length > 0 && (
+                                                        <div 
+                                                            className="absolute top-2 left-2 z-10"
+                                                            onClick={(e) => toggleSelection(kiePred.id, e)}
+                                                        >
+                                                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                                                                selectedIds.has(kiePred.id)
+                                                                    ? 'bg-purple-600 border-purple-600'
+                                                                    : 'bg-gray-800/80 border-gray-600 hover:border-purple-500'
+                                                            }`}>
+                                                                {selectedIds.has(kiePred.id) && (
+                                                                    <i className="fas fa-check text-white text-xs"></i>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-16 h-16 bg-black/40 rounded-lg flex items-center justify-center text-gray-600">
+                                                            {kiePred.status === 'completed' && kiePred.outputs.length > 0 ? (
+                                                                 <video src={kiePred.outputs[0]} className="w-full h-full object-cover rounded-lg" muted playsInline />
+                                                            ) : (
+                                                                <i className="fas fa-film text-2xl"></i>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex-grow">
+                                                            <div className="flex justify-between items-start">
+                                                                <p className="text-sm font-semibold text-gray-300">
+                                                                    {kiePred.prompt ? kiePred.prompt.substring(0, 30) + (kiePred.prompt.length > 30 ? '...' : '') : 'Kie Video Generation'}
+                                                                </p>
+                                                                <StatusIndicator status={kiePred.status} />
+                                                            </div>
+                                                            <p className="text-xs text-gray-500 mt-1">
+                                                                {new Date(kiePred.created_at).toLocaleTimeString('en-US', { 
+                                                                    hour: '2-digit', 
+                                                                    minute: '2-digit',
+                                                                    second: '2-digit'
+                                                                })}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
                  <div className="p-4 border-t border-gray-800 text-center text-xs text-gray-600">
-                    <p>Showing videos from the last 7 days.</p>
+                    <p>{activeTab === 'wavespeed' ? 'Showing videos from the last 7 days.' : 'Showing Kie video generations.'}</p>
                 </div>
                 </div>
             </div>
