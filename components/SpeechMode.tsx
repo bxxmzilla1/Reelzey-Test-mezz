@@ -339,19 +339,6 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
                   </select>
                 </div>
 
-                {/* Watermark */}
-                <div>
-                  <label className="block text-sm font-semibold mb-2 text-gray-300">Watermark (Optional)</label>
-                  <input
-                    type="text"
-                    value={watermark}
-                    onChange={(e) => setWatermark(e.target.value)}
-                    placeholder="MyBrand"
-                    className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
-                    disabled={loading}
-                  />
-                </div>
-
                 {/* Callback URL */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
