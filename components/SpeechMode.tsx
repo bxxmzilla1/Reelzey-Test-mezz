@@ -25,8 +25,6 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
   const [result, setResult] = useState<any>(null);
   const [hasApiKey, setHasApiKey] = useState<boolean>(false);
   const [showCallbackDocs, setShowCallbackDocs] = useState(false);
-  const [uploadingStartFrame, setUploadingStartFrame] = useState(false);
-  const [uploadingLastFrame, setUploadingLastFrame] = useState(false);
 
   useEffect(() => {
     const checkApiKey = () => {
@@ -114,112 +112,6 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
     setLastFramePreview(null);
   };
 
-  // Convert file to base64
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          resolve(reader.result);
-        } else {
-          reject(new Error('Failed to convert file to base64'));
-        }
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
-  // Upload image to Kie.ai API
-  const uploadImage = async (base64Data: string, fileName: string): Promise<string> => {
-    const apiKey = getApiKey();
-    
-    const response = await fetch('https://kieai.redpandaai.co/api/file-base64-upload', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        base64Data: base64Data,
-        uploadPath: 'images/base64',
-        fileName: fileName,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: `HTTP error! status: ${response.status}` }));
-      throw new Error(errorData.message || errorData.error || `HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    // Handle various possible response structures
-    if (data.url) {
-      return data.url;
-    }
-    if (data.data?.url) {
-      return data.data.url;
-    }
-    if (data.resultUrl) {
-      return data.resultUrl;
-    }
-    if (data.data?.resultUrl) {
-      return data.data.resultUrl;
-    }
-    if (data.fileUrl) {
-      return data.fileUrl;
-    }
-    if (data.data?.fileUrl) {
-      return data.data.fileUrl;
-    }
-    // If response has a message with URL, try to extract it
-    if (data.msg && typeof data.msg === 'string' && data.msg.startsWith('http')) {
-      return data.msg;
-    }
-    throw new Error('No URL returned from upload API. Response: ' + JSON.stringify(data));
-  };
-
-  const handleStartFrameUpload = async (file: File) => {
-    setUploadingStartFrame(true);
-    setError(null);
-    
-    try {
-      // Convert file to base64
-      const base64Data = await fileToBase64(file);
-      
-      // Upload to API
-      const uploadedUrl = await uploadImage(base64Data, file.name);
-      
-      // Set the URL in the input
-      setStartFrameUrl(uploadedUrl);
-      handleStartFrameUrlChange(uploadedUrl);
-    } catch (err: any) {
-      setError(extractErrorMessage(err, "Failed to upload start frame image. Please try again."));
-    } finally {
-      setUploadingStartFrame(false);
-    }
-  };
-
-  const handleLastFrameUpload = async (file: File) => {
-    setUploadingLastFrame(true);
-    setError(null);
-    
-    try {
-      // Convert file to base64
-      const base64Data = await fileToBase64(file);
-      
-      // Upload to API
-      const uploadedUrl = await uploadImage(base64Data, file.name);
-      
-      // Set the URL in the input
-      setLastFrameUrl(uploadedUrl);
-      handleLastFrameUrlChange(uploadedUrl);
-    } catch (err: any) {
-      setError(extractErrorMessage(err, "Failed to upload last frame image. Please try again."));
-    } finally {
-      setUploadingLastFrame(false);
-    }
-  };
 
 
   const handleGenerate = async () => {
@@ -309,8 +201,6 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
     setLoading(false);
     setError(null);
     setResult(null);
-    setUploadingStartFrame(false);
-    setUploadingLastFrame(false);
   };
 
   return (
@@ -361,52 +251,13 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
                 {/* Start Frame Image URL */}
                 <div>
                   <label className="block text-sm font-semibold mb-2 text-gray-300">Start Frame Image URL *</label>
-                  
-                  {/* Upload Button */}
-                  <div className="mb-3">
-                    <label className="relative inline-block">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          if (e.target.files && e.target.files[0]) {
-                            handleStartFrameUpload(e.target.files[0]);
-                          }
-                        }}
-                        className="hidden"
-                        disabled={loading || uploadingStartFrame}
-                      />
-                      <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl transition-all cursor-pointer ${
-                        uploadingStartFrame || loading
-                          ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                          : 'bg-purple-600 hover:bg-purple-500 text-white'
-                      }`}>
-                        {uploadingStartFrame ? (
-                          <>
-                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Uploading...
-                          </>
-                        ) : (
-                          <>
-                            <i className="fas fa-upload"></i>
-                            Upload Image
-                          </>
-                        )}
-                      </span>
-                    </label>
-                    <span className="text-xs text-gray-400 ml-3">or enter URL below</span>
-                  </div>
-                  
                   <input
                     type="text"
                     value={startFrameUrl}
                     onChange={(e) => handleStartFrameUrlChange(e.target.value)}
                     placeholder="http://example.com/start-frame.jpg"
                     className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
-                    disabled={loading || uploadingStartFrame}
+                    disabled={loading}
                   />
                   {startFramePreview && !startFramePreviewError && (
                     <div className="mt-3 rounded-xl border border-gray-800 overflow-hidden bg-gray-900/50">
@@ -430,52 +281,13 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
                 {/* Last Frame Image URL */}
                 <div>
                   <label className="block text-sm font-semibold mb-2 text-gray-300">Last Frame Image URL *</label>
-                  
-                  {/* Upload Button */}
-                  <div className="mb-3">
-                    <label className="relative inline-block">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          if (e.target.files && e.target.files[0]) {
-                            handleLastFrameUpload(e.target.files[0]);
-                          }
-                        }}
-                        className="hidden"
-                        disabled={loading || uploadingLastFrame}
-                      />
-                      <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl transition-all cursor-pointer ${
-                        uploadingLastFrame || loading
-                          ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                          : 'bg-purple-600 hover:bg-purple-500 text-white'
-                      }`}>
-                        {uploadingLastFrame ? (
-                          <>
-                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Uploading...
-                          </>
-                        ) : (
-                          <>
-                            <i className="fas fa-upload"></i>
-                            Upload Image
-                          </>
-                        )}
-                      </span>
-                    </label>
-                    <span className="text-xs text-gray-400 ml-3">or enter URL below</span>
-                  </div>
-                  
                   <input
                     type="text"
                     value={lastFrameUrl}
                     onChange={(e) => handleLastFrameUrlChange(e.target.value)}
                     placeholder="http://example.com/last-frame.jpg"
                     className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
-                    disabled={loading || uploadingLastFrame}
+                    disabled={loading}
                   />
                   {lastFramePreview && !lastFramePreviewError && (
                     <div className="mt-3 rounded-xl border border-gray-800 overflow-hidden bg-gray-900/50">
