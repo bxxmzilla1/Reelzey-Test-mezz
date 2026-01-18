@@ -58,15 +58,63 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
     return String(err);
   };
 
-  // Convert file to base64 data URL
-  const fileToDataUrl = (file: File): Promise<string> => {
+  // Compress and resize image before converting to base64
+  const compressImage = (file: File, maxWidth: number = 1920, maxHeight: number = 1920, quality: number = 0.85): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === 'string') {
-          resolve(reader.result);
-        } else {
-          reject(new Error('Failed to convert file to data URL'));
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          // Calculate new dimensions while maintaining aspect ratio
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = width * ratio;
+            height = height * ratio;
+          }
+          
+          // Create canvas and resize
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          
+          if (!ctx) {
+            reject(new Error('Failed to get canvas context'));
+            return;
+          }
+          
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Convert to blob with compression
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                reject(new Error('Failed to compress image'));
+                return;
+              }
+              
+              // Convert blob to base64
+              const reader2 = new FileReader();
+              reader2.onloadend = () => {
+                if (typeof reader2.result === 'string') {
+                  resolve(reader2.result);
+                } else {
+                  reject(new Error('Failed to convert blob to data URL'));
+                }
+              };
+              reader2.onerror = reject;
+              reader2.readAsDataURL(blob);
+            },
+            'image/jpeg',
+            quality
+          );
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+        if (e.target?.result) {
+          img.src = e.target.result as string;
         }
       };
       reader.onerror = reject;
@@ -114,9 +162,9 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
     try {
       const apiKey = getApiKey();
 
-      // Convert files to base64 data URLs
-      const startFrameDataUrl = await fileToDataUrl(startFrameFile);
-      const lastFrameDataUrl = await fileToDataUrl(lastFrameFile);
+      // Compress and convert files to base64 data URLs
+      const startFrameDataUrl = await compressImage(startFrameFile);
+      const lastFrameDataUrl = await compressImage(lastFrameFile);
 
       const requestBody: any = {
         prompt: prompt.trim(),
