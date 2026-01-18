@@ -140,14 +140,116 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
         };
     }, [fetchKieHistory]);
 
-    // Auto-refresh Kie history periodically to pick up updates
+    // Poll for Kie prediction status updates every second
     useEffect(() => {
-        const interval = setInterval(() => {
-            fetchKieHistory();
-        }, 30000); // Refresh every 30 seconds
+        const pollKieStatus = async () => {
+            const existingHistory = localStorage.getItem('kieHistory');
+            if (!existingHistory) return;
+            
+            const history: KiePrediction[] = JSON.parse(existingHistory);
+            const processingTasks = history.filter(p => p.status === 'processing' && p.taskId);
+            
+            if (processingTasks.length === 0) return;
+            
+            const apiKey = localStorage.getItem('kieApiKey');
+            if (!apiKey) return;
+            
+            // Check status for each processing task
+            for (const task of processingTasks) {
+                try {
+                    // Try different possible API endpoints for status checking
+                    const endpoints = [
+                        `https://api.kie.ai/api/v1/veo/status/${task.taskId}`,
+                        `https://api.kie.ai/api/v1/veo/task/${task.taskId}`,
+                        `https://api.kie.ai/api/v1/veo/result/${task.taskId}`,
+                    ];
+                    
+                    let statusUpdated = false;
+                    
+                    for (const endpoint of endpoints) {
+                        try {
+                            const response = await fetch(endpoint, {
+                                headers: {
+                                    'Authorization': `Bearer ${apiKey}`,
+                                },
+                            });
+                            
+                            if (response.ok) {
+                                const data = await response.json();
+                                
+                                // Check if this is a status response
+                                if (data.code === 200 && data.data?.info?.resultUrls) {
+                                    // Task completed successfully
+                                    updateKiePredictionFromCallback(data);
+                                    statusUpdated = true;
+                                    break;
+                                } else if (data.code !== 200 && data.data?.taskId) {
+                                    // Task failed
+                                    updateKiePredictionFromCallback(data);
+                                    statusUpdated = true;
+                                    break;
+                                } else if (data.status === 'completed' && data.outputs) {
+                                    // Alternative response format
+                                    const callbackData = {
+                                        code: 200,
+                                        data: {
+                                            taskId: task.taskId,
+                                            info: {
+                                                resultUrls: Array.isArray(data.outputs) ? data.outputs : [data.outputs],
+                                            },
+                                        },
+                                    };
+                                    updateKiePredictionFromCallback(callbackData);
+                                    statusUpdated = true;
+                                    break;
+                                } else if (data.status === 'failed') {
+                                    // Task failed
+                                    const callbackData = {
+                                        code: 400,
+                                        msg: data.error || 'Task failed',
+                                        data: {
+                                            taskId: task.taskId,
+                                        },
+                                    };
+                                    updateKiePredictionFromCallback(callbackData);
+                                    statusUpdated = true;
+                                    break;
+                                }
+                            }
+                        } catch (endpointErr) {
+                            // Try next endpoint
+                            continue;
+                        }
+                    }
+                    
+                    // If no endpoint worked, silently continue (API might not have status endpoint)
+                    if (!statusUpdated) {
+                        // Check if task is older than 10 minutes, mark as failed if so
+                        const taskAge = Date.now() - new Date(task.created_at).getTime();
+                        if (taskAge > 10 * 60 * 1000) {
+                            const callbackData = {
+                                code: 408,
+                                msg: 'Task timeout - no response received',
+                                data: {
+                                    taskId: task.taskId,
+                                },
+                            };
+                            updateKiePredictionFromCallback(callbackData);
+                        }
+                    }
+                } catch (err) {
+                    // Silently continue - API might not support status checking
+                    console.debug('Status check failed (this is normal if endpoint doesn\'t exist):', err);
+                }
+            }
+        };
+        
+        // Poll every second
+        const interval = setInterval(pollKieStatus, 1000);
+        pollKieStatus(); // Initial check
         
         return () => clearInterval(interval);
-    }, [fetchKieHistory]);
+    }, []);
     
     const StatusIndicator = ({ status }: { status: string }) => {
         let colorClasses = '';
