@@ -7,7 +7,11 @@ interface SpeechModeProps {
 const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
   const [prompt, setPrompt] = useState('');
   const [startFrameUrl, setStartFrameUrl] = useState('');
+  const [startFramePreview, setStartFramePreview] = useState<string | null>(null);
+  const [startFramePreviewError, setStartFramePreviewError] = useState(false);
   const [lastFrameUrl, setLastFrameUrl] = useState('');
+  const [lastFramePreview, setLastFramePreview] = useState<string | null>(null);
+  const [lastFramePreviewError, setLastFramePreviewError] = useState(false);
   const [model, setModel] = useState('veo3_fast');
   const [watermark, setWatermark] = useState('');
   const [callBackUrl, setCallBackUrl] = useState('');
@@ -58,11 +62,53 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
   const handleStartFrameUrlChange = (url: string) => {
     setError(null);
     setStartFrameUrl(url);
+    
+    // Validate and set preview
+    if (url.trim()) {
+      // Basic URL validation
+      try {
+        new URL(url.trim());
+        setStartFramePreview(url.trim());
+        setStartFramePreviewError(false);
+      } catch {
+        setStartFramePreview(null);
+        setStartFramePreviewError(false);
+      }
+    } else {
+      setStartFramePreview(null);
+      setStartFramePreviewError(false);
+    }
   };
 
   const handleLastFrameUrlChange = (url: string) => {
     setError(null);
     setLastFrameUrl(url);
+    
+    // Validate and set preview
+    if (url.trim()) {
+      // Basic URL validation
+      try {
+        new URL(url.trim());
+        setLastFramePreview(url.trim());
+        setLastFramePreviewError(false);
+      } catch {
+        setLastFramePreview(null);
+        setLastFramePreviewError(false);
+      }
+    } else {
+      setLastFramePreview(null);
+      setLastFramePreviewError(false);
+    }
+  };
+
+  const handleStartFrameImageError = () => {
+    setStartFramePreviewError(true);
+    setStartFramePreview(null);
+  };
+
+  const handleLastFrameImageError = () => {
+    setLastFramePreviewError(true);
+    setLastFramePreview(null);
   };
 
 
@@ -138,7 +184,11 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
   const handleReset = () => {
     setPrompt('');
     setStartFrameUrl('');
+    setStartFramePreview(null);
+    setStartFramePreviewError(false);
     setLastFrameUrl('');
+    setLastFramePreview(null);
+    setLastFramePreviewError(false);
     setModel('veo3_fast');
     setWatermark('');
     setCallBackUrl('');
@@ -207,6 +257,22 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
                     className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
                     disabled={loading}
                   />
+                  {startFramePreview && !startFramePreviewError && (
+                    <div className="mt-3 rounded-xl border border-gray-800 overflow-hidden bg-gray-900/50">
+                      <img
+                        src={startFramePreview}
+                        alt="Start frame preview"
+                        className="w-full h-auto max-h-64 object-contain"
+                        onError={handleStartFrameImageError}
+                      />
+                    </div>
+                  )}
+                  {startFramePreviewError && (
+                    <div className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center gap-2">
+                      <i className="fas fa-exclamation-triangle"></i>
+                      Failed to load image. Please check the URL.
+                    </div>
+                  )}
                   <p className="text-xs text-gray-400 mt-2">The first frame of the video.</p>
                 </div>
 
@@ -221,6 +287,22 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
                     className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
                     disabled={loading}
                   />
+                  {lastFramePreview && !lastFramePreviewError && (
+                    <div className="mt-3 rounded-xl border border-gray-800 overflow-hidden bg-gray-900/50">
+                      <img
+                        src={lastFramePreview}
+                        alt="Last frame preview"
+                        className="w-full h-auto max-h-64 object-contain"
+                        onError={handleLastFrameImageError}
+                      />
+                    </div>
+                  )}
+                  {lastFramePreviewError && (
+                    <div className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center gap-2">
+                      <i className="fas fa-exclamation-triangle"></i>
+                      Failed to load image. Please check the URL.
+                    </div>
+                  )}
                   <p className="text-xs text-gray-400 mt-2">The last frame of the video. The video will transition between the start and last frames.</p>
                 </div>
 
