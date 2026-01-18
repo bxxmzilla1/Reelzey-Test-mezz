@@ -19,6 +19,7 @@ const SidebarMenu: React.FC<SidebarMenuProps> = ({ activeMenu, onMenuChange }) =
     { id: 'stageCreator', name: 'Stage Creator', icon: 'fa-theater-masks', iconType: 'fa' as const },
     { id: 'directorMode', name: 'Director Mode', icon: 'fa-video', iconType: 'fa' as const },
     { id: 'mirrorMode', name: 'Mirror Mode', icon: 'mirror', iconType: 'svg' as const },
+    { id: 'speechMode', name: 'Speech Mode', icon: 'fa-comments', iconType: 'fa' as const },
     { id: 'voiceCloner', name: 'Voice Cloner', icon: 'fa-microphone', iconType: 'fa' as const },
     { id: 'textToSpeech', name: 'Text To Speech', icon: 'fa-volume-up', iconType: 'fa' as const },
     { id: 'voiceChanger', name: 'Voice Changer', icon: 'fa-magic', iconType: 'fa' as const },

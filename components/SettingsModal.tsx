@@ -10,6 +10,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSave }
   const [geminiKey, setGeminiKey] = useState('');
   const [wavespeedKey, setWavespeedKey] = useState('');
   const [elevenlabsKey, setElevenlabsKey] = useState('');
+  const [kieKey, setKieKey] = useState('');
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -17,6 +18,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSave }
       setGeminiKey(localStorage.getItem('geminiApiKey') || '');
       setWavespeedKey(localStorage.getItem('wavespeedApiKey') || '');
       setElevenlabsKey(localStorage.getItem('elevenlabsApiKey') || '');
+      setKieKey(localStorage.getItem('kieApiKey') || '');
     }
   }, [isOpen]);
 
@@ -26,6 +28,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSave }
     localStorage.setItem('geminiApiKey', geminiKey);
     localStorage.setItem('wavespeedApiKey', wavespeedKey);
     localStorage.setItem('elevenlabsApiKey', elevenlabsKey);
+    localStorage.setItem('kieApiKey', kieKey);
     
     // Update global variables for libraries that check them
     if (typeof window !== 'undefined' && geminiKey) {
@@ -95,6 +98,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onSave }
                     className="w-full bg-black/40 rounded-lg p-3 border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
                 />
                 <p className="text-xs text-gray-500 mt-2">Required for Voice Cloner features. Create an API key in the <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 underline">ElevenLabs dashboard</a>.</p>
+            </div>
+            <div>
+                <label className="block mb-2 text-sm font-medium text-gray-300">Kie.ai API Key</label>
+                <input
+                    type="password"
+                    value={kieKey}
+                    onChange={(e) => setKieKey(e.target.value)}
+                    placeholder="Enter your Kie.ai API key"
+                    className="w-full bg-black/40 rounded-lg p-3 border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
+                />
+                <p className="text-xs text-gray-500 mt-2">Required for Speech Mode video generation features.</p>
             </div>
         </div>
         <div className="flex gap-4 justify-end border-t border-gray-700/50 pt-6 mt-2">

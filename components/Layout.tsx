@@ -12,6 +12,7 @@ import VoiceCloner from './VoiceCloner';
 import TextToSpeech from './TextToSpeech';
 import VoiceChanger from './VoiceChanger';
 import VoiceActors from './VoiceActors';
+import SpeechMode from './SpeechMode';
 
 const Layout: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState('directorMode');
@@ -160,7 +161,7 @@ const Layout: React.FC = () => {
       />
 
       {/* Main Content Area - Adjusted for sidebar/footer */}
-      <div className={`pt-16 ${(activeMenu === 'directorMode' || activeMenu === 'mirrorMode' || activeMenu === 'stageCreator' || activeMenu === 'voiceCloner' || activeMenu === 'textToSpeech' || activeMenu === 'voiceChanger' || activeMenu === 'voiceActors') ? 'md:pl-64' : ''} ${(activeMenu === 'directorMode' || activeMenu === 'mirrorMode' || activeMenu === 'stageCreator' || activeMenu === 'voiceCloner' || activeMenu === 'textToSpeech' || activeMenu === 'voiceChanger' || activeMenu === 'voiceActors') ? 'pb-24 md:pb-0' : ''}`}>
+      <div className={`pt-16 ${(activeMenu === 'directorMode' || activeMenu === 'mirrorMode' || activeMenu === 'stageCreator' || activeMenu === 'speechMode' || activeMenu === 'voiceCloner' || activeMenu === 'textToSpeech' || activeMenu === 'voiceChanger' || activeMenu === 'voiceActors') ? 'md:pl-64' : ''} ${(activeMenu === 'directorMode' || activeMenu === 'mirrorMode' || activeMenu === 'stageCreator' || activeMenu === 'speechMode' || activeMenu === 'voiceCloner' || activeMenu === 'textToSpeech' || activeMenu === 'voiceChanger' || activeMenu === 'voiceActors') ? 'pb-24 md:pb-0' : ''}`}>
         {/* Director Mode Title */}
         {activeMenu === 'directorMode' && (
           <div className="px-4 md:px-8 pt-8 pb-4">
@@ -195,6 +196,12 @@ const Layout: React.FC = () => {
         {activeMenu === 'voiceChanger' && (
           <div className="px-4 md:px-8 pt-8 pb-4">
             <h1 className="text-3xl font-bold gradient-text">Voice Changer</h1>
+          </div>
+        )}
+        {/* Speech Mode Title */}
+        {activeMenu === 'speechMode' && (
+          <div className="px-4 md:px-8 pt-8 pb-4">
+            <h1 className="text-3xl font-bold gradient-text">Speech Mode</h1>
           </div>
         )}
         {/* Voice Actors Title */}
@@ -250,6 +257,11 @@ const Layout: React.FC = () => {
           )}
           {activeMenu === 'voiceChanger' && (
             <VoiceChanger 
+              onOpenSettings={() => setIsSettingsOpen(true)}
+            />
+          )}
+          {activeMenu === 'speechMode' && (
+            <SpeechMode 
               onOpenSettings={() => setIsSettingsOpen(true)}
             />
           )}
