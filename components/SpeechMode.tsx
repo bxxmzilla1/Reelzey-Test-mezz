@@ -9,8 +9,10 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
   const [prompt, setPrompt] = useState('');
   const [startFrameFile, setStartFrameFile] = useState<File | null>(null);
   const [startFramePreview, setStartFramePreview] = useState<string | null>(null);
+  const [startFrameUrl, setStartFrameUrl] = useState('');
   const [lastFrameFile, setLastFrameFile] = useState<File | null>(null);
   const [lastFramePreview, setLastFramePreview] = useState<string | null>(null);
+  const [lastFrameUrl, setLastFrameUrl] = useState('');
   const [model, setModel] = useState('veo3_fast');
   const [watermark, setWatermark] = useState('');
   const [callBackUrl, setCallBackUrl] = useState('');
@@ -125,6 +127,7 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
   const handleStartFrameSelect = (file: File) => {
     setError(null);
     setStartFrameFile(file);
+    setStartFrameUrl(''); // Clear URL when file is selected
     // Create preview URL
     const previewUrl = URL.createObjectURL(file);
     setStartFramePreview(previewUrl);
@@ -133,9 +136,38 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
   const handleLastFrameSelect = (file: File) => {
     setError(null);
     setLastFrameFile(file);
+    setLastFrameUrl(''); // Clear URL when file is selected
     // Create preview URL
     const previewUrl = URL.createObjectURL(file);
     setLastFramePreview(previewUrl);
+  };
+
+  const handleStartFrameUrlChange = (url: string) => {
+    setError(null);
+    setStartFrameUrl(url);
+    if (url.trim()) {
+      setStartFrameFile(null); // Clear file when URL is entered
+      if (startFramePreview && startFramePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(startFramePreview);
+      }
+      setStartFramePreview(url); // Use URL as preview
+    } else {
+      setStartFramePreview(null);
+    }
+  };
+
+  const handleLastFrameUrlChange = (url: string) => {
+    setError(null);
+    setLastFrameUrl(url);
+    if (url.trim()) {
+      setLastFrameFile(null); // Clear file when URL is entered
+      if (lastFramePreview && lastFramePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(lastFramePreview);
+      }
+      setLastFramePreview(url); // Use URL as preview
+    } else {
+      setLastFramePreview(null);
+    }
   };
 
 
@@ -145,13 +177,13 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
       return;
     }
 
-    if (!startFrameFile) {
-      setError("Please upload a start frame image.");
+    if (!startFrameFile && !startFrameUrl.trim()) {
+      setError("Please upload a start frame image or provide a start frame image URL.");
       return;
     }
 
-    if (!lastFrameFile) {
-      setError("Please upload a last frame image.");
+    if (!lastFrameFile && !lastFrameUrl.trim()) {
+      setError("Please upload a last frame image or provide a last frame image URL.");
       return;
     }
 
@@ -162,9 +194,24 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
     try {
       const apiKey = getApiKey();
 
-      // Compress and convert files to base64 data URLs
-      const startFrameDataUrl = await compressImage(startFrameFile);
-      const lastFrameDataUrl = await compressImage(lastFrameFile);
+      // Use file if available, otherwise use URL
+      let startFrameDataUrl: string;
+      if (startFrameFile) {
+        // Compress and convert file to base64 data URL
+        startFrameDataUrl = await compressImage(startFrameFile);
+      } else {
+        // Use URL directly
+        startFrameDataUrl = startFrameUrl.trim();
+      }
+
+      let lastFrameDataUrl: string;
+      if (lastFrameFile) {
+        // Compress and convert file to base64 data URL
+        lastFrameDataUrl = await compressImage(lastFrameFile);
+      } else {
+        // Use URL directly
+        lastFrameDataUrl = lastFrameUrl.trim();
+      }
 
       const requestBody: any = {
         prompt: prompt.trim(),
@@ -212,16 +259,18 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
   const handleReset = () => {
     setPrompt('');
     // Clean up preview URLs
-    if (startFramePreview) {
+    if (startFramePreview && startFramePreview.startsWith('blob:')) {
       URL.revokeObjectURL(startFramePreview);
     }
-    if (lastFramePreview) {
+    if (lastFramePreview && lastFramePreview.startsWith('blob:')) {
       URL.revokeObjectURL(lastFramePreview);
     }
     setStartFrameFile(null);
     setStartFramePreview(null);
+    setStartFrameUrl('');
     setLastFrameFile(null);
     setLastFramePreview(null);
+    setLastFrameUrl('');
     setModel('veo3_fast');
     setWatermark('');
     setCallBackUrl('');
@@ -237,10 +286,10 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
   // Cleanup preview URLs on unmount
   useEffect(() => {
     return () => {
-      if (startFramePreview) {
+      if (startFramePreview && startFramePreview.startsWith('blob:')) {
         URL.revokeObjectURL(startFramePreview);
       }
-      if (lastFramePreview) {
+      if (lastFramePreview && lastFramePreview.startsWith('blob:')) {
         URL.revokeObjectURL(lastFramePreview);
       }
     };
@@ -302,6 +351,22 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
                     type="image"
                     showPasteButton={true}
                   />
+                  <div className="mt-4 flex items-center gap-2">
+                    <div className="flex-1 border-t border-gray-700"></div>
+                    <span className="text-xs text-gray-500">OR</span>
+                    <div className="flex-1 border-t border-gray-700"></div>
+                  </div>
+                  <div className="mt-4">
+                    <label className="block text-sm font-semibold mb-2 text-gray-300">Start Frame Image URL</label>
+                    <input
+                      type="text"
+                      value={startFrameUrl}
+                      onChange={(e) => handleStartFrameUrlChange(e.target.value)}
+                      placeholder="http://example.com/start-frame.jpg"
+                      className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
+                      disabled={loading || !!startFrameFile}
+                    />
+                  </div>
                   <p className="text-xs text-gray-400 mt-2">The first frame of the video.</p>
                 </div>
 
@@ -316,6 +381,22 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
                     type="image"
                     showPasteButton={true}
                   />
+                  <div className="mt-4 flex items-center gap-2">
+                    <div className="flex-1 border-t border-gray-700"></div>
+                    <span className="text-xs text-gray-500">OR</span>
+                    <div className="flex-1 border-t border-gray-700"></div>
+                  </div>
+                  <div className="mt-4">
+                    <label className="block text-sm font-semibold mb-2 text-gray-300">Last Frame Image URL</label>
+                    <input
+                      type="text"
+                      value={lastFrameUrl}
+                      onChange={(e) => handleLastFrameUrlChange(e.target.value)}
+                      placeholder="http://example.com/last-frame.jpg"
+                      className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
+                      disabled={loading || !!lastFrameFile}
+                    />
+                  </div>
                   <p className="text-xs text-gray-400 mt-2">The last frame of the video. The video will transition between the start and last frames.</p>
                 </div>
 
@@ -423,7 +504,7 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
                 {!result && (
                   <button
                     onClick={handleGenerate}
-                    disabled={loading || !prompt.trim() || !startFrameFile || !lastFrameFile}
+                    disabled={loading || !prompt.trim() || (!startFrameFile && !startFrameUrl.trim()) || (!lastFrameFile && !lastFrameUrl.trim())}
                     className="w-full py-4 rounded-xl font-semibold text-lg transition-all flex items-center justify-center gap-3 bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-900/30 neon-glow neon-glow-hover active:scale-[0.98] disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed disabled:neon-glow-0"
                   >
                     {loading ? (
@@ -461,7 +542,7 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
                   <div className="flex flex-col md:flex-row gap-4 items-center justify-center">
                     <button
                       onClick={handleGenerate}
-                      disabled={loading || !prompt.trim() || !startFrameFile || !lastFrameFile}
+                      disabled={loading || !prompt.trim() || (!startFrameFile && !startFrameUrl.trim()) || (!lastFrameFile && !lastFrameUrl.trim())}
                       className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed"
                     >
                       {loading ? (
