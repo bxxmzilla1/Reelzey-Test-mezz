@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import FileUpload from './FileUpload';
 
 interface SpeechModeProps {
   onOpenSettings?: () => void;
@@ -7,11 +6,7 @@ interface SpeechModeProps {
 
 const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
   const [prompt, setPrompt] = useState('');
-  const [startFrameFile, setStartFrameFile] = useState<File | null>(null);
-  const [startFramePreview, setStartFramePreview] = useState<string | null>(null);
   const [startFrameUrl, setStartFrameUrl] = useState('');
-  const [lastFrameFile, setLastFrameFile] = useState<File | null>(null);
-  const [lastFramePreview, setLastFramePreview] = useState<string | null>(null);
   const [lastFrameUrl, setLastFrameUrl] = useState('');
   const [model, setModel] = useState('veo3_fast');
   const [watermark, setWatermark] = useState('');
@@ -60,114 +55,14 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
     return String(err);
   };
 
-  // Compress and resize image before converting to base64
-  const compressImage = (file: File, maxWidth: number = 1920, maxHeight: number = 1920, quality: number = 0.85): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          // Calculate new dimensions while maintaining aspect ratio
-          let width = img.width;
-          let height = img.height;
-          
-          if (width > maxWidth || height > maxHeight) {
-            const ratio = Math.min(maxWidth / width, maxHeight / height);
-            width = width * ratio;
-            height = height * ratio;
-          }
-          
-          // Create canvas and resize
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          
-          if (!ctx) {
-            reject(new Error('Failed to get canvas context'));
-            return;
-          }
-          
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          // Convert to blob with compression
-          canvas.toBlob(
-            (blob) => {
-              if (!blob) {
-                reject(new Error('Failed to compress image'));
-                return;
-              }
-              
-              // Convert blob to base64
-              const reader2 = new FileReader();
-              reader2.onloadend = () => {
-                if (typeof reader2.result === 'string') {
-                  resolve(reader2.result);
-                } else {
-                  reject(new Error('Failed to convert blob to data URL'));
-                }
-              };
-              reader2.onerror = reject;
-              reader2.readAsDataURL(blob);
-            },
-            'image/jpeg',
-            quality
-          );
-        };
-        img.onerror = () => reject(new Error('Failed to load image'));
-        if (e.target?.result) {
-          img.src = e.target.result as string;
-        }
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const handleStartFrameSelect = (file: File) => {
-    setError(null);
-    setStartFrameFile(file);
-    setStartFrameUrl(''); // Clear URL when file is selected
-    // Create preview URL
-    const previewUrl = URL.createObjectURL(file);
-    setStartFramePreview(previewUrl);
-  };
-
-  const handleLastFrameSelect = (file: File) => {
-    setError(null);
-    setLastFrameFile(file);
-    setLastFrameUrl(''); // Clear URL when file is selected
-    // Create preview URL
-    const previewUrl = URL.createObjectURL(file);
-    setLastFramePreview(previewUrl);
-  };
-
   const handleStartFrameUrlChange = (url: string) => {
     setError(null);
     setStartFrameUrl(url);
-    if (url.trim()) {
-      setStartFrameFile(null); // Clear file when URL is entered
-      if (startFramePreview && startFramePreview.startsWith('blob:')) {
-        URL.revokeObjectURL(startFramePreview);
-      }
-      setStartFramePreview(url); // Use URL as preview
-    } else {
-      setStartFramePreview(null);
-    }
   };
 
   const handleLastFrameUrlChange = (url: string) => {
     setError(null);
     setLastFrameUrl(url);
-    if (url.trim()) {
-      setLastFrameFile(null); // Clear file when URL is entered
-      if (lastFramePreview && lastFramePreview.startsWith('blob:')) {
-        URL.revokeObjectURL(lastFramePreview);
-      }
-      setLastFramePreview(url); // Use URL as preview
-    } else {
-      setLastFramePreview(null);
-    }
   };
 
 
@@ -177,13 +72,13 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
       return;
     }
 
-    if (!startFrameFile && !startFrameUrl.trim()) {
-      setError("Please upload a start frame image or provide a start frame image URL.");
+    if (!startFrameUrl.trim()) {
+      setError("Please provide a start frame image URL.");
       return;
     }
 
-    if (!lastFrameFile && !lastFrameUrl.trim()) {
-      setError("Please upload a last frame image or provide a last frame image URL.");
+    if (!lastFrameUrl.trim()) {
+      setError("Please provide a last frame image URL.");
       return;
     }
 
@@ -194,24 +89,8 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
     try {
       const apiKey = getApiKey();
 
-      // Use file if available, otherwise use URL
-      let startFrameDataUrl: string;
-      if (startFrameFile) {
-        // Compress and convert file to base64 data URL
-        startFrameDataUrl = await compressImage(startFrameFile);
-      } else {
-        // Use URL directly
-        startFrameDataUrl = startFrameUrl.trim();
-      }
-
-      let lastFrameDataUrl: string;
-      if (lastFrameFile) {
-        // Compress and convert file to base64 data URL
-        lastFrameDataUrl = await compressImage(lastFrameFile);
-      } else {
-        // Use URL directly
-        lastFrameDataUrl = lastFrameUrl.trim();
-      }
+      const startFrameDataUrl = startFrameUrl.trim();
+      const lastFrameDataUrl = lastFrameUrl.trim();
 
       const requestBody: any = {
         prompt: prompt.trim(),
@@ -258,18 +137,7 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
 
   const handleReset = () => {
     setPrompt('');
-    // Clean up preview URLs
-    if (startFramePreview && startFramePreview.startsWith('blob:')) {
-      URL.revokeObjectURL(startFramePreview);
-    }
-    if (lastFramePreview && lastFramePreview.startsWith('blob:')) {
-      URL.revokeObjectURL(lastFramePreview);
-    }
-    setStartFrameFile(null);
-    setStartFramePreview(null);
     setStartFrameUrl('');
-    setLastFrameFile(null);
-    setLastFramePreview(null);
     setLastFrameUrl('');
     setModel('veo3_fast');
     setWatermark('');
@@ -282,18 +150,6 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
     setError(null);
     setResult(null);
   };
-
-  // Cleanup preview URLs on unmount
-  useEffect(() => {
-    return () => {
-      if (startFramePreview && startFramePreview.startsWith('blob:')) {
-        URL.revokeObjectURL(startFramePreview);
-      }
-      if (lastFramePreview && lastFramePreview.startsWith('blob:')) {
-        URL.revokeObjectURL(lastFramePreview);
-      }
-    };
-  }, [startFramePreview, lastFramePreview]);
 
   return (
     <div className="px-4 md:px-8 pb-8 max-w-4xl mx-auto">
@@ -340,63 +196,31 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
                   <p className="text-xs text-gray-400 mt-2">Describe the video you want to generate.</p>
                 </div>
 
-                {/* Start Frame Image Upload */}
+                {/* Start Frame Image URL */}
                 <div>
-                  <FileUpload
-                    label="Start Frame Image *"
-                    accept="image/*"
-                    icon="fas fa-image"
-                    onFileSelect={handleStartFrameSelect}
-                    preview={startFramePreview}
-                    type="image"
-                    showPasteButton={true}
+                  <label className="block text-sm font-semibold mb-2 text-gray-300">Start Frame Image URL *</label>
+                  <input
+                    type="text"
+                    value={startFrameUrl}
+                    onChange={(e) => handleStartFrameUrlChange(e.target.value)}
+                    placeholder="http://example.com/start-frame.jpg"
+                    className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
+                    disabled={loading}
                   />
-                  <div className="mt-4 flex items-center gap-2">
-                    <div className="flex-1 border-t border-gray-700"></div>
-                    <span className="text-xs text-gray-500">OR</span>
-                    <div className="flex-1 border-t border-gray-700"></div>
-                  </div>
-                  <div className="mt-4">
-                    <label className="block text-sm font-semibold mb-2 text-gray-300">Start Frame Image URL</label>
-                    <input
-                      type="text"
-                      value={startFrameUrl}
-                      onChange={(e) => handleStartFrameUrlChange(e.target.value)}
-                      placeholder="http://example.com/start-frame.jpg"
-                      className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
-                      disabled={loading || !!startFrameFile}
-                    />
-                  </div>
                   <p className="text-xs text-gray-400 mt-2">The first frame of the video.</p>
                 </div>
 
-                {/* Last Frame Image Upload */}
+                {/* Last Frame Image URL */}
                 <div>
-                  <FileUpload
-                    label="Last Frame Image *"
-                    accept="image/*"
-                    icon="fas fa-image"
-                    onFileSelect={handleLastFrameSelect}
-                    preview={lastFramePreview}
-                    type="image"
-                    showPasteButton={true}
+                  <label className="block text-sm font-semibold mb-2 text-gray-300">Last Frame Image URL *</label>
+                  <input
+                    type="text"
+                    value={lastFrameUrl}
+                    onChange={(e) => handleLastFrameUrlChange(e.target.value)}
+                    placeholder="http://example.com/last-frame.jpg"
+                    className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
+                    disabled={loading}
                   />
-                  <div className="mt-4 flex items-center gap-2">
-                    <div className="flex-1 border-t border-gray-700"></div>
-                    <span className="text-xs text-gray-500">OR</span>
-                    <div className="flex-1 border-t border-gray-700"></div>
-                  </div>
-                  <div className="mt-4">
-                    <label className="block text-sm font-semibold mb-2 text-gray-300">Last Frame Image URL</label>
-                    <input
-                      type="text"
-                      value={lastFrameUrl}
-                      onChange={(e) => handleLastFrameUrlChange(e.target.value)}
-                      placeholder="http://example.com/last-frame.jpg"
-                      className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
-                      disabled={loading || !!lastFrameFile}
-                    />
-                  </div>
                   <p className="text-xs text-gray-400 mt-2">The last frame of the video. The video will transition between the start and last frames.</p>
                 </div>
 
@@ -504,7 +328,7 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
                 {!result && (
                   <button
                     onClick={handleGenerate}
-                    disabled={loading || !prompt.trim() || (!startFrameFile && !startFrameUrl.trim()) || (!lastFrameFile && !lastFrameUrl.trim())}
+                    disabled={loading || !prompt.trim() || !startFrameUrl.trim() || !lastFrameUrl.trim()}
                     className="w-full py-4 rounded-xl font-semibold text-lg transition-all flex items-center justify-center gap-3 bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-900/30 neon-glow neon-glow-hover active:scale-[0.98] disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed disabled:neon-glow-0"
                   >
                     {loading ? (
@@ -542,7 +366,7 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
                   <div className="flex flex-col md:flex-row gap-4 items-center justify-center">
                     <button
                       onClick={handleGenerate}
-                      disabled={loading || !prompt.trim() || (!startFrameFile && !startFrameUrl.trim()) || (!lastFrameFile && !lastFrameUrl.trim())}
+                      disabled={loading || !prompt.trim() || !startFrameUrl.trim() || !lastFrameUrl.trim()}
                       className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed"
                     >
                       {loading ? (
