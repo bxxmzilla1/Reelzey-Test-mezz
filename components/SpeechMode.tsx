@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import FileUpload from './FileUpload';
 
 interface SpeechModeProps {
   onOpenSettings?: () => void;
@@ -6,8 +7,10 @@ interface SpeechModeProps {
 
 const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
   const [prompt, setPrompt] = useState('');
-  const [startFrameUrl, setStartFrameUrl] = useState('');
-  const [lastFrameUrl, setLastFrameUrl] = useState('');
+  const [startFrameFile, setStartFrameFile] = useState<File | null>(null);
+  const [startFramePreview, setStartFramePreview] = useState<string | null>(null);
+  const [lastFrameFile, setLastFrameFile] = useState<File | null>(null);
+  const [lastFramePreview, setLastFramePreview] = useState<string | null>(null);
   const [model, setModel] = useState('veo3_fast');
   const [watermark, setWatermark] = useState('');
   const [callBackUrl, setCallBackUrl] = useState('');
@@ -55,6 +58,38 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
     return String(err);
   };
 
+  // Convert file to base64 data URL
+  const fileToDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          resolve(reader.result);
+        } else {
+          reject(new Error('Failed to convert file to data URL'));
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleStartFrameSelect = (file: File) => {
+    setError(null);
+    setStartFrameFile(file);
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setStartFramePreview(previewUrl);
+  };
+
+  const handleLastFrameSelect = (file: File) => {
+    setError(null);
+    setLastFrameFile(file);
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setLastFramePreview(previewUrl);
+  };
+
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -62,13 +97,13 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
       return;
     }
 
-    if (!startFrameUrl.trim()) {
-      setError("Please provide a start frame image URL.");
+    if (!startFrameFile) {
+      setError("Please upload a start frame image.");
       return;
     }
 
-    if (!lastFrameUrl.trim()) {
-      setError("Please provide a last frame image URL.");
+    if (!lastFrameFile) {
+      setError("Please upload a last frame image.");
       return;
     }
 
@@ -79,9 +114,13 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
     try {
       const apiKey = getApiKey();
 
+      // Convert files to base64 data URLs
+      const startFrameDataUrl = await fileToDataUrl(startFrameFile);
+      const lastFrameDataUrl = await fileToDataUrl(lastFrameFile);
+
       const requestBody: any = {
         prompt: prompt.trim(),
-        imageUrls: [startFrameUrl.trim(), lastFrameUrl.trim()],
+        imageUrls: [startFrameDataUrl, lastFrameDataUrl],
         model: model,
         watermark: watermark.trim() || undefined,
         callBackUrl: callBackUrl.trim() || undefined,
@@ -124,8 +163,17 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
 
   const handleReset = () => {
     setPrompt('');
-    setStartFrameUrl('');
-    setLastFrameUrl('');
+    // Clean up preview URLs
+    if (startFramePreview) {
+      URL.revokeObjectURL(startFramePreview);
+    }
+    if (lastFramePreview) {
+      URL.revokeObjectURL(lastFramePreview);
+    }
+    setStartFrameFile(null);
+    setStartFramePreview(null);
+    setLastFrameFile(null);
+    setLastFramePreview(null);
     setModel('veo3_fast');
     setWatermark('');
     setCallBackUrl('');
@@ -137,6 +185,18 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
     setError(null);
     setResult(null);
   };
+
+  // Cleanup preview URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (startFramePreview) {
+        URL.revokeObjectURL(startFramePreview);
+      }
+      if (lastFramePreview) {
+        URL.revokeObjectURL(lastFramePreview);
+      }
+    };
+  }, [startFramePreview, lastFramePreview]);
 
   return (
     <div className="px-4 md:px-8 pb-8 max-w-4xl mx-auto">
@@ -183,30 +243,30 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
                   <p className="text-xs text-gray-400 mt-2">Describe the video you want to generate.</p>
                 </div>
 
-                {/* Start Frame Image URL */}
+                {/* Start Frame Image Upload */}
                 <div>
-                  <label className="block text-sm font-semibold mb-2 text-gray-300">Start Frame Image URL *</label>
-                  <input
-                    type="text"
-                    value={startFrameUrl}
-                    onChange={(e) => setStartFrameUrl(e.target.value)}
-                    placeholder="http://example.com/start-frame.jpg"
-                    className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
-                    disabled={loading}
+                  <FileUpload
+                    label="Start Frame Image *"
+                    accept="image/*"
+                    icon="fas fa-image"
+                    onFileSelect={handleStartFrameSelect}
+                    preview={startFramePreview}
+                    type="image"
+                    showPasteButton={true}
                   />
                   <p className="text-xs text-gray-400 mt-2">The first frame of the video.</p>
                 </div>
 
-                {/* Last Frame Image URL */}
+                {/* Last Frame Image Upload */}
                 <div>
-                  <label className="block text-sm font-semibold mb-2 text-gray-300">Last Frame Image URL *</label>
-                  <input
-                    type="text"
-                    value={lastFrameUrl}
-                    onChange={(e) => setLastFrameUrl(e.target.value)}
-                    placeholder="http://example.com/last-frame.jpg"
-                    className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
-                    disabled={loading}
+                  <FileUpload
+                    label="Last Frame Image *"
+                    accept="image/*"
+                    icon="fas fa-image"
+                    onFileSelect={handleLastFrameSelect}
+                    preview={lastFramePreview}
+                    type="image"
+                    showPasteButton={true}
                   />
                   <p className="text-xs text-gray-400 mt-2">The last frame of the video. The video will transition between the start and last frames.</p>
                 </div>
@@ -315,7 +375,7 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
                 {!result && (
                   <button
                     onClick={handleGenerate}
-                    disabled={loading || !prompt.trim() || !startFrameUrl.trim() || !lastFrameUrl.trim()}
+                    disabled={loading || !prompt.trim() || !startFrameFile || !lastFrameFile}
                     className="w-full py-4 rounded-xl font-semibold text-lg transition-all flex items-center justify-center gap-3 bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-900/30 neon-glow neon-glow-hover active:scale-[0.98] disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed disabled:neon-glow-0"
                   >
                     {loading ? (
@@ -353,7 +413,7 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
                   <div className="flex flex-col md:flex-row gap-4 items-center justify-center">
                     <button
                       onClick={handleGenerate}
-                      disabled={loading || !prompt.trim() || !startFrameUrl.trim() || !lastFrameUrl.trim()}
+                      disabled={loading || !prompt.trim() || !startFrameFile || !lastFrameFile}
                       className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed"
                     >
                       {loading ? (
