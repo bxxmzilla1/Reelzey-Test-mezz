@@ -6,7 +6,8 @@ interface SpeechModeProps {
 
 const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
   const [prompt, setPrompt] = useState('');
-  const [imageUrls, setImageUrls] = useState<string[]>(['']);
+  const [startFrameUrl, setStartFrameUrl] = useState('');
+  const [lastFrameUrl, setLastFrameUrl] = useState('');
   const [model, setModel] = useState('veo3_fast');
   const [watermark, setWatermark] = useState('');
   const [callBackUrl, setCallBackUrl] = useState('');
@@ -14,7 +15,7 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
   const [seeds, setSeeds] = useState<number | null>(null);
   const [enableFallback, setEnableFallback] = useState(false);
   const [enableTranslation, setEnableTranslation] = useState(true);
-  const [generationType, setGenerationType] = useState('REFERENCE_2_VIDEO');
+  const [generationType] = useState('FIRST_AND_LAST_FRAMES_2_VIDEO');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
@@ -54,22 +55,6 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
     return String(err);
   };
 
-  const handleImageUrlChange = (index: number, value: string) => {
-    const newUrls = [...imageUrls];
-    newUrls[index] = value;
-    setImageUrls(newUrls);
-  };
-
-  const addImageUrl = () => {
-    setImageUrls([...imageUrls, '']);
-  };
-
-  const removeImageUrl = (index: number) => {
-    if (imageUrls.length > 1) {
-      const newUrls = imageUrls.filter((_, i) => i !== index);
-      setImageUrls(newUrls);
-    }
-  };
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -77,9 +62,13 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
       return;
     }
 
-    const validImageUrls = imageUrls.filter(url => url.trim() !== '');
-    if (validImageUrls.length === 0) {
-      setError("Please provide at least one image URL.");
+    if (!startFrameUrl.trim()) {
+      setError("Please provide a start frame image URL.");
+      return;
+    }
+
+    if (!lastFrameUrl.trim()) {
+      setError("Please provide a last frame image URL.");
       return;
     }
 
@@ -92,7 +81,7 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
 
       const requestBody: any = {
         prompt: prompt.trim(),
-        imageUrls: validImageUrls,
+        imageUrls: [startFrameUrl.trim(), lastFrameUrl.trim()],
         model: model,
         watermark: watermark.trim() || undefined,
         callBackUrl: callBackUrl.trim() || undefined,
@@ -135,7 +124,8 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
 
   const handleReset = () => {
     setPrompt('');
-    setImageUrls(['']);
+    setStartFrameUrl('');
+    setLastFrameUrl('');
     setModel('veo3_fast');
     setWatermark('');
     setCallBackUrl('');
@@ -143,7 +133,6 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
     setSeeds(null);
     setEnableFallback(false);
     setEnableTranslation(true);
-    setGenerationType('REFERENCE_2_VIDEO');
     setLoading(false);
     setError(null);
     setResult(null);
@@ -194,40 +183,32 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
                   <p className="text-xs text-gray-400 mt-2">Describe the video you want to generate.</p>
                 </div>
 
-                {/* Image URLs */}
+                {/* Start Frame Image URL */}
                 <div>
-                  <label className="block text-sm font-semibold mb-2 text-gray-300">Image URLs *</label>
-                  <div className="flex flex-col gap-3">
-                    {imageUrls.map((url, index) => (
-                      <div key={index} className="flex gap-2">
-                        <input
-                          type="text"
-                          value={url}
-                          onChange={(e) => handleImageUrlChange(index, e.target.value)}
-                          placeholder="http://example.com/image1.jpg"
-                          className="flex-1 px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
-                          disabled={loading}
-                        />
-                        {imageUrls.length > 1 && (
-                          <button
-                            onClick={() => removeImageUrl(index)}
-                            className="px-4 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl transition-all"
-                            disabled={loading}
-                          >
-                            <i className="fas fa-times"></i>
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                    <button
-                      onClick={addImageUrl}
-                      className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-xl transition-all flex items-center justify-center gap-2 self-start"
-                      disabled={loading}
-                    >
-                      <i className="fas fa-plus"></i> Add Image URL
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-400 mt-2">Provide at least one image URL for reference.</p>
+                  <label className="block text-sm font-semibold mb-2 text-gray-300">Start Frame Image URL *</label>
+                  <input
+                    type="text"
+                    value={startFrameUrl}
+                    onChange={(e) => setStartFrameUrl(e.target.value)}
+                    placeholder="http://example.com/start-frame.jpg"
+                    className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
+                    disabled={loading}
+                  />
+                  <p className="text-xs text-gray-400 mt-2">The first frame of the video.</p>
+                </div>
+
+                {/* Last Frame Image URL */}
+                <div>
+                  <label className="block text-sm font-semibold mb-2 text-gray-300">Last Frame Image URL *</label>
+                  <input
+                    type="text"
+                    value={lastFrameUrl}
+                    onChange={(e) => setLastFrameUrl(e.target.value)}
+                    placeholder="http://example.com/last-frame.jpg"
+                    className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
+                    disabled={loading}
+                  />
+                  <p className="text-xs text-gray-400 mt-2">The last frame of the video. The video will transition between the start and last frames.</p>
                 </div>
 
                 {/* Model */}
@@ -243,18 +224,6 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
                   </select>
                 </div>
 
-                {/* Generation Type */}
-                <div>
-                  <label className="block text-sm font-semibold mb-2 text-gray-300">Generation Type</label>
-                  <select
-                    value={generationType}
-                    onChange={(e) => setGenerationType(e.target.value)}
-                    className="w-full px-4 py-3 bg-black/40 rounded-xl border border-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors text-gray-300"
-                    disabled={loading}
-                  >
-                    <option value="REFERENCE_2_VIDEO">REFERENCE_2_VIDEO</option>
-                  </select>
-                </div>
 
                 {/* Aspect Ratio */}
                 <div>
@@ -346,7 +315,7 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
                 {!result && (
                   <button
                     onClick={handleGenerate}
-                    disabled={loading || !prompt.trim() || imageUrls.filter(url => url.trim() !== '').length === 0}
+                    disabled={loading || !prompt.trim() || !startFrameUrl.trim() || !lastFrameUrl.trim()}
                     className="w-full py-4 rounded-xl font-semibold text-lg transition-all flex items-center justify-center gap-3 bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-900/30 neon-glow neon-glow-hover active:scale-[0.98] disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed disabled:neon-glow-0"
                   >
                     {loading ? (
@@ -384,7 +353,7 @@ const SpeechMode: React.FC<SpeechModeProps> = ({ onOpenSettings }) => {
                   <div className="flex flex-col md:flex-row gap-4 items-center justify-center">
                     <button
                       onClick={handleGenerate}
-                      disabled={loading || !prompt.trim() || imageUrls.filter(url => url.trim() !== '').length === 0}
+                      disabled={loading || !prompt.trim() || !startFrameUrl.trim() || !lastFrameUrl.trim()}
                       className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed"
                     >
                       {loading ? (
