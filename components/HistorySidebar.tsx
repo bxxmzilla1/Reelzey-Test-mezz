@@ -381,12 +381,15 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({ onSelectVideo, onClose 
                         <h2 className="text-xl font-semibold">Generation History</h2>
                         <div className="flex items-center gap-2">
                             <button 
-                                onClick={() => activeTab === 'wavespeed' ? fetchHistory() : fetchKieHistory()} 
-                                disabled={activeTab === 'wavespeed' ? isLoading : kieLoading}
+                                onClick={() => {
+                                    fetchHistory();
+                                    fetchKieHistory();
+                                }} 
+                                disabled={isLoading || kieLoading}
                                 className={`text-gray-500 hover:text-purple-400 transition-colors p-2 rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed`}
                                 title="Refresh History"
                             >
-                                <i className={`fas fa-sync-alt text-lg ${(activeTab === 'wavespeed' ? isLoading : kieLoading) ? 'animate-spin' : ''}`}></i>
+                                <i className={`fas fa-sync-alt text-lg ${(isLoading || kieLoading) ? 'animate-spin' : ''}`}></i>
                             </button>
                             <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors p-2 rounded-lg hover:bg-gray-800">
                                 <i className="fas fa-times text-xl"></i>
